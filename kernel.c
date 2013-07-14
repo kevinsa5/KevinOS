@@ -31,6 +31,7 @@ void printStatus(unsigned char);
 #include "driver.c"
 #include "util.c"
 #include "IDT.c"
+#include "shell_commands.c"
 
 char* vidmem;
 int ttx;
@@ -38,6 +39,7 @@ int tty;
 char prompt;
 int modifier[6];
 unsigned long int ticks;
+int commandLength;
 
 void main(){
 	vidmem = (char*) 0xb8000;
@@ -47,6 +49,7 @@ void main(){
 	setSeed(5);
 	modifier[5] = 0;
 	int i = 0;
+	commandLength = 0;
 	while(modifier[i] != 0) modifier[i] = 0;
 	modifier[INSERT] = 1;
 	prompt = '$';
@@ -124,14 +127,9 @@ void keyPressed(unsigned char code){
 		int j;
 		for(j = 0; j < (offset(ttx,tty)-i)/2; j++) command[j] = vidmem[i+2*j];
 		ttprintChar('\n');
-		ttprint("You entered: `");
-		ttprint(command);
-		ttprint("' and it is of length ");
-		char str[strLen(command)/10+1];
-		intToString(strLen(command), str);
-		ttprintln(str);
+		commandLength = strLen(command);
 		
-		#include "shell_commands.c"
+		sh_handler(command);
 		
 		ttprintChar(c);
 		ttprintChar(prompt);
@@ -145,11 +143,12 @@ void printStatus(unsigned char code){
 	int i;
 	for(i = 0; i < width; i++){
 		printChar(i,height,'-',0x0F);
+		printChar(i,absolute_height,' ',0x0F);
 	}
 	int statusX = 0;
 	print(statusX, absolute_height, "KeyCode:");
 	statusX += 8;
-	char str[5];
+	char str[10];
 	charToString(code,str);
 	if(code != -1) print(statusX, absolute_height, str);
 	statusX += 4;
@@ -173,11 +172,15 @@ void printStatus(unsigned char code){
 	statusX += 5;
 	printChar(statusX, absolute_height, modifier[ALT]+'0', 0x0F);
 	statusX += 1;
+	print(statusX, absolute_height, " Last Entry:");
+	statusX += 12;
+	intToString(commandLength,str);
+	print(statusX, absolute_height, str);
+	statusX += strLen(str-1);
 	print(statusX, absolute_height, " Time:");
 	statusX += 6;
-	char strTime[10];
-	intToString(ticks/100,strTime);
-	print(statusX, absolute_height,strTime);
+	intToString(ticks/100,str);
+	print(statusX, absolute_height,str);
 }
 void ttprint(char *string){
 	int i;
