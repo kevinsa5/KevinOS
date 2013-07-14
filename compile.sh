@@ -16,3 +16,6 @@ dd if=/dev/zero of=floppy.img bs=512 count=2880
 dd if=os-image of=floppy.img conv=notrunc
 sudo dd if=floppy.img of=/dev/sdb && sync
 sudo virtualbox
+
+rm *.o
+rm *.bin
