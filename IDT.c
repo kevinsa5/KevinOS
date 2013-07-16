@@ -171,7 +171,7 @@ void idt_init()
 	idt_entry(46, &int_46, 0x08, 0x8E);
 	idt_entry(47, &int_47, 0x08, 0x8E);
 
-	for(i = 48; i < 256; i++)				// Fill in the remaining entries with a standard isr
+	for(i = 48; i < 256; i++)	// Fill in the remaining entries with a standard isr
 	{
 		idt_entry(i, &int_general, 0x08, 0x8E);
 	}
@@ -185,7 +185,7 @@ void idt_init()
 
 void idt_entry(unsigned int entry, void* offset, unsigned short selector, unsigned char flag)
 {
-	unsigned int offsetinteger = (unsigned int)offset;	// Store pointer into an integer for later processing
+	unsigned int offsetinteger = (unsigned int)offset;
 	idttable[entry].offset1 = offsetinteger & 0xFFFF;		
 	idttable[entry].selector = selector;
 	idttable[entry].unused = 0;
@@ -365,7 +365,10 @@ void isr_39(){
 void isr_40(){
 	writeByteToPort(0xA0,0x20);
 	writeByteToPort(0x20,0x20);
-	ttprintln("isr_40 (IRQ 8: CMOS real-time clock) was called");
+	//by reading register C, the interrupt will happen again
+	writeByteToPort(0x70,0x0C);
+	readByteFromPort(0x71);
+	rtcCall();
 }
 void isr_41(){
 	writeByteToPort(0xA0,0x20);
