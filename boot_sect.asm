@@ -79,7 +79,7 @@ print:
 [bits 16]
 load_kernel:
 	mov bx, KERNEL_OFFSET
-	mov dh, 33;Change as kernel increases in size
+	mov dh, 44;Change as kernel increases in size
 	mov dl, [BOOT_DRIVE]
 	call disk_load
 	ret

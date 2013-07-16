@@ -26,7 +26,10 @@ void cursorBackwards();
 void cursorForwards();
 void keyPressed(unsigned char);
 void pitCall();
+void rtcCall();
 void printStatus(unsigned char);
+void enableInterrupts();
+void disableInterrupts();
 
 #include "driver.c"
 #include "util.c"
@@ -34,15 +37,18 @@ void printStatus(unsigned char);
 #include "shell_commands.c"
 
 char* vidmem;
+char* KFS;
 int ttx;
 int tty;
 char prompt;
 int modifier[6];
 unsigned long int ticks;
 int commandLength;
+char counter;
 
 void main(){
 	vidmem = (char*) 0xb8000;
+	KFS = (char*) 0x4400;
 	ttx = 0;
 	tty = 0;
 	ticks = 0;
@@ -50,7 +56,11 @@ void main(){
 	modifier[5] = 0;
 	int i = 0;
 	commandLength = 0;
-	while(modifier[i] != 0) modifier[i] = 0;
+	counter = '0';
+	while(modifier[i] != 0){
+		modifier[i] = 0;
+		i++;
+	}
 	modifier[INSERT] = 1;
 	prompt = '$';
 	clearScreen(0x0F);
@@ -59,7 +69,15 @@ void main(){
 	idt_init();
 	setTimerFreq(100);
 	ttprintln(" done");
-	ttprintChar(3);
+	ttprintIntln(-1);
+	//turn on bit 6 of register B:
+	disableInterrupts();
+	writeByteToPort(0x70,0x8B);
+	char prev=readByteFromPort(0x71);
+	writeByteToPort(0x70,0x8B);
+	writeByteToPort(0x71, prev | 0x40);	
+	enableInterrupts();
+	
 	ttprintln("");
 	ttprintln("Prompt is ready, dickhead:");
 	ttprintChar(prompt);
@@ -135,6 +153,11 @@ void keyPressed(unsigned char code){
 		ttprintChar(prompt);
 	}
 }
+void rtcCall(){
+	counter++;
+	if(counter > '9') counter = '1';
+	printChar(width-1,absolute_height,counter,0x0F);
+}
 void pitCall(){
 	ticks++;
 	if(ticks % 100 == 0) printStatus(-1);
@@ -189,7 +212,9 @@ void ttprint(char *string){
 	}
 }
 void ttprintInt(int n){
-	char str[n/10+1];
+	int len = n/10 + 1;
+	if(n < 0) len++; // minus sign
+	char str[len];
 	intToString(n,str);
 	ttprint(str);
 }
@@ -290,4 +315,9 @@ void clearScreen(int color){
 		}
 	}
 }
-
+void disableInterrupts(){
+	asm volatile("cli");
+}
+void enableInterrupts(){
+	asm volatile("sti; nop");
+}

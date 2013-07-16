@@ -1,4 +1,4 @@
-
+void memFill(char*, char, int);
 void memCopy(char*, char*, int);
 int strLen(char*);
 void intToString(int, char*);
@@ -11,7 +11,14 @@ void reverseInPlace(char*);
 void setSeed(unsigned int);
 unsigned int rand(unsigned int);
 int pow(int, int);
+int isAlpha(char);
+int isNumeric(char);
+int isAlphaNumeric(char);
 
+void memFill(char* to, char filler, int len){
+	int i;
+	for(i = 0; i < len; i++) to[i] = filler;
+}
 void memCopy(char* from, char* to, int len){
 	int i;
 	for(i = 0; i < len; i++){
@@ -26,29 +33,40 @@ int strLen(char* str){
 }
 
 void intToString(int n, char s[]){
+	int num = n;
 	if(n == 0){
 		s[0] = '0';
 		s[1] = 0;
 		return;
+	}
+	if(num < 0){
+		s++;
+		n*=-1;
 	}
 	int i;
 	for(i = 0; n != 0; i++){
 		s[i] = '0'+(n % 10);
 		n/=10;
 	}
-	s[i] = '\0';
+	s[i] = 0;
 	reverseInPlace(s);
+	if(num < 0){
+		s--;
+		s[0] = '-';
+	}	
 }
 
 int strToInt(char* s){
+	int sign = 1;
+	if(s[0] == '-') sign = -1;
 	int n = 0;
-	int i = 0;
+	int i = (sign == 1 ? 0 : 1);
 	int len = strLen(s);
 	while(s[i] != 0){
 		n += (s[i] - '0') * pow(10,len-i-2);
 		i++;
 	}
-	return n;
+	return n*sign;
 }
 
 char table[2][49] = {{0x0B, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32, 0x31, 0x18, 0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C, 0x39, 0x1C, 0x34, 0x33, 0x35, 0x0D, 0x0C, 0x29, 0x1A, 0x1B, 0x2B, 0x28, 0x27},
@@ -129,7 +147,21 @@ void reverseInPlace(char s[]){
 		s[j] = c;
 	}
 }
-
+int isLower(char c){
+	return c >= 'a' && c <= 'z';
+}
+int isUpper(char c){
+	return c >= 'A' && c <= 'Z';
+}
+int isAlpha(char c){
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+int isNumeric(char c){
+	return c >= '0' && c <= '9';
+}
+int isAlphaNumeric(char c){
+	return isAlpha(c) || isNumeric(c);
+}
 static unsigned long int rNum;
 void setSeed(unsigned int seed){
 	rNum = seed;
