@@ -9,6 +9,7 @@
 #define INSERT 3
 #define CAPSLOCK 4
 
+void delay(int);
 void print(int, int, char *);
 void printChar(int, int, char, int);
 char getChar(int, int);
@@ -42,7 +43,7 @@ int ttx;
 int tty;
 char prompt;
 int modifier[6];
-unsigned long int ticks;
+volatile unsigned long int ticks;
 int commandLength;
 char counter;
 
@@ -67,9 +68,9 @@ void main(){
 	ttprintln("I am a computer! I am running Kevin's OS!"); 
 	ttprint("Preparing Interrupts...");
 	idt_init();
-	setTimerFreq(100);
+	setTimerFreq(1000);
 	ttprintln(" done");
-	ttprintIntln(-1);
+	
 	//turn on bit 6 of register B:
 	disableInterrupts();
 	writeByteToPort(0x70,0x8B);
@@ -153,6 +154,12 @@ void keyPressed(unsigned char code){
 		ttprintChar(prompt);
 	}
 }
+void delay(int mS){
+	enableInterrupts();
+	unsigned long int start = ticks;
+	while(ticks - start < mS){;}
+	ttprint("done");
+}
 void rtcCall(){
 	counter++;
 	if(counter > '9') counter = '1';
@@ -160,7 +167,7 @@ void rtcCall(){
 }
 void pitCall(){
 	ticks++;
-	if(ticks % 100 == 0) printStatus(-1);
+	if(ticks % PITfreq == 0) printStatus(0);
 }
 void printStatus(unsigned char code){
 	int i;
@@ -202,7 +209,7 @@ void printStatus(unsigned char code){
 	statusX += strLen(str-1);
 	print(statusX, absolute_height, " Time:");
 	statusX += 6;
-	intToString(ticks/100,str);
+	intToString(ticks/PITfreq,str);
 	print(statusX, absolute_height,str);
 }
 void ttprint(char *string){

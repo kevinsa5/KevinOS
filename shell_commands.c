@@ -1,5 +1,7 @@
-void sh_sti();
-void sh_cli();
+void sh_delay(char*);
+void sh_beep(char*);
+void sh_sti(char*);
+void sh_cli(char*);
 void sh_htoi(char*);
 void sh_int(char*);
 void sh_charTable(char*);
@@ -9,8 +11,8 @@ void sh_rand(char*);
 void sh_hexTable(char*);
 void sh_null(char*);
 
-char *shCommandList[] = {"sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
+char *shCommandList[] = {"delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -29,7 +31,18 @@ void sh_handler(char* command){
 		ttprintln(program);
 	}
 }
-
+void sh_delay(char* params){
+	delay(strToInt(params));
+}
+void sh_beep(char* params){
+	int freq = 440;
+	if(strLen(params)>1){
+		freq = strToInt(params);
+	}
+	play_sound(freq);
+	delay(1000);
+	play_sound(0);
+}
 void sh_htoi(char* params){
 	int len = strLen(params)-1;
 	if(len < 3 || params[0] != '0' || params[1] != 'x'){
@@ -123,10 +136,10 @@ void sh_hexTable(char* params){
 		}
 	}
 }
-void sh_sti(){
+void sh_sti(char* params){
 	enableInterrupts();
 }
-void sh_cli(){
+void sh_cli(char* params){
 	disableInterrupts();
 }
 void sh_null(char* params){
