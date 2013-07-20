@@ -32,13 +32,9 @@ void printStatus(unsigned char);
 void enableInterrupts();
 void disableInterrupts();
 
-#include "driver.c"
-#include "util.c"
-#include "IDT.c"
-#include "shell_commands.c"
-
-char* vidmem;
+extern char _binary_KFS_bin_start[];
 char* KFS;
+char* vidmem;
 int ttx;
 int tty;
 char prompt;
@@ -47,9 +43,14 @@ volatile unsigned long int ticks;
 int commandLength;
 char counter;
 
+#include "driver.c"
+#include "util.c"
+#include "IDT.c"
+#include "shell_commands.c"
+
 void main(){
 	vidmem = (char*) 0xb8000;
-	KFS = (char*) 0x4400;
+	KFS = _binary_KFS_bin_start;
 	ttx = 0;
 	tty = 0;
 	ticks = 0;

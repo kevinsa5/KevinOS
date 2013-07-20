@@ -1,4 +1,5 @@
-void sh_crescendo(char*);
+void sh_readKFS(char*);
+void sh_glissando(char*);
 void sh_mario(char*);
 void sh_delay(char*);
 void sh_beep(char*);
@@ -13,8 +14,8 @@ void sh_rand(char*);
 void sh_hexTable(char*);
 void sh_null(char*);
 
-char *shCommandList[] = {"crescendo", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_crescendo, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
+char *shCommandList[] = {"readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -33,7 +34,29 @@ void sh_handler(char* command){
 		ttprintln(program);
 	}
 }
-void sh_crescendo(char* params){
+void sh_readKFS(char* params){
+	// readKFS offset length
+	int i;
+	for(i=0;i<strLen(params);i++){
+		if(params[i] == ' ') break;
+	}
+	char offset[i+1];
+	memCopy(params,offset,i);
+	offset[i] = 0;
+	int iOffset = strToInt(offset);
+	
+	char length[strLen(params)-i];
+	memCopy(params+i+1,length,strLen(params)-i);
+	int iLength = strToInt(length);
+	
+	char* pointer = KFS;
+	pointer += iOffset;
+	
+	for(i=0;i<iLength;i++){
+		ttprintChar(pointer[i]);
+	}
+}
+void sh_glissando(char* params){
 	int i = 220;
 	//xxxx 50
 	char param[8];
