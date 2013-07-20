@@ -22,7 +22,7 @@ jmp start
   db 29h                        ; signature
   dd 0                          ; volume ID
   db '           '              ; volume label
-  db 'FAT12   '                 ; file system type
+  db 'ASDFG   '                 ; file system type
   
 BOOT_DRIVE 		db 0
 MSG_1 			db 'Bootloader running successfully!', 0
@@ -32,26 +32,26 @@ DISK_ERROR_MSG 	db 'Disk Read failed!', 0
 INCOMPLETE_READ_MSG db 'Wrong number of sectors read', 0
 HALTING_MSG		db 'Execution Halted', 0
 
-KERNEL_OFFSET equ 0x1000
+KERNEL_OFFSET equ 0x200
 
 start:
-cli
+
 xor ax, ax
 mov ds, ax
 mov es, ax
-mov ss, ax
-mov sp, 0x7C00
-mov[BOOT_DRIVE], dl		; the BIOS stores boot drive in DL
-
+cli
 mov bp, 0x9000			; Set up the stack
 mov sp, bp
+mov ss, ax
+sti
+mov[BOOT_DRIVE], dl		; the BIOS stores boot drive in DL
 
 mov bx, MSG_1
 call println
 mov bx, MSG_2
 call println
 mov ah, 0
-int 16h
+int 16h					; wait for keystroke
 call load_kernel
 call enter_pm
 jmp $
@@ -79,7 +79,7 @@ print:
 [bits 16]
 load_kernel:
 	mov bx, KERNEL_OFFSET
-	mov dh, 44;Change as kernel increases in size
+	mov dh, 51;Change as kernel increases in size
 	mov dl, [BOOT_DRIVE]
 	call disk_load
 	ret

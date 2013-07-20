@@ -1,3 +1,5 @@
+void sh_crescendo(char*);
+void sh_mario(char*);
 void sh_delay(char*);
 void sh_beep(char*);
 void sh_sti(char*);
@@ -11,8 +13,8 @@ void sh_rand(char*);
 void sh_hexTable(char*);
 void sh_null(char*);
 
-char *shCommandList[] = {"delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
+char *shCommandList[] = {"crescendo", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_crescendo, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -31,16 +33,113 @@ void sh_handler(char* command){
 		ttprintln(program);
 	}
 }
+void sh_crescendo(char* params){
+	int i = 220;
+	//xxxx 50
+	char param[8];
+	while(i < 220*8){
+		intToString(i,param);
+		if(i < 1000){
+			param[3] = ' ';
+			param[4] = '5';
+			param[5] = '0';
+			param[6] = 0;
+		} else {
+			param[4] = ' ';
+			param[5] = '5';
+			param[6] = '0';
+			param[7] = 0;
+		}
+		sh_beep(param);
+		i = i + 20;
+	}
+	sh_beep("0 0");
+}
+void sh_mario(char* params){
+	sh_beep("660 100");
+	delay(150);
+	sh_beep("660 100");
+	delay(300);
+	sh_beep("660 100");
+	delay(300);
+	sh_beep("510 100");
+	delay(100);
+	sh_beep("660 100");
+	delay(300);
+	sh_beep("770 100");
+	delay(550);
+	sh_beep("380 100");
+	delay(575);
+	int i;
+	for(i = 0; i < 2; i++){
+		sh_beep("510 100");
+		delay(450);
+		sh_beep("380 100");
+		delay(400);
+		sh_beep("320 100");
+		delay(500);
+		sh_beep("440 100");
+		delay(300);
+		sh_beep("480 80");
+		delay(330);
+		sh_beep("450 100");
+		delay(150);
+		sh_beep("430 100");
+		delay(300);
+		sh_beep("380 100");
+		delay(200);
+		sh_beep("660 80");
+		delay(200);
+		sh_beep("760 50");
+		delay(150);
+		sh_beep("860 100");
+		delay(300);
+		sh_beep("700 80");
+		delay(150);
+		sh_beep("760 50");
+		delay(350);
+		sh_beep("660 80");
+		delay(300);
+		sh_beep("520 80");
+		delay(150);
+		sh_beep("580 80");
+		delay(150);
+		sh_beep("480 80");
+		delay(500);
+	}
+	
+	sh_beep("500 100");
+	delay(300);
+	
+	sh_beep("760 100");
+	delay(100);
+	sh_beep("720 100");
+	delay(150);
+	sh_beep("680 100");
+	delay(150);
+	sh_beep("620 150");
+	delay(300);
+}
 void sh_delay(char* params){
 	delay(strToInt(params));
 }
 void sh_beep(char* params){
-	int freq = 440;
-	if(strLen(params)>1){
-		freq = strToInt(params);
+	//"beep freq duration"
+	int i,freq = 440, dur = 1000;
+	for(i=0;i<strLen(params);i++){
+		if(params[i] == ' ') break;
+	}
+	char frequency[i+1];
+	memCopy(params,frequency,i);
+	frequency[i] = 0;
+	freq = strToInt(frequency);
+	if(i != strLen(params)){
+		char duration[strLen(params)-i];
+		memCopy(params+i+1,duration,strLen(params)-i);
+		dur = strToInt(duration);
 	}
 	play_sound(freq);
-	delay(1000);
+	delay(dur);
 	play_sound(0);
 }
 void sh_htoi(char* params){
@@ -82,16 +181,21 @@ void sh_hexDump(char* params){
 	char substr[i+1];
 	memCopy(params,substr,i);
 	substr[i] = 0;
-	char* pointer = (char*) strToInt(substr);
+	char* pointer = (char*) ((int*)strToInt(substr));
 	char substr2[strLen(params)-i];
 	memCopy(params+i+1,substr2,strLen(params)-i);
 	int length = strToInt(substr2);
+	for(i=0;i<length;i++){
+		ttprintChar(pointer[i]);
+	}
+	/*
 	char hex[5];
 	for(i = 0; i < length; i++){
 		charToString(pointer[i],hex);
 		ttprint(hex);
 		ttprintChar(' ');
 	}
+	*/
 }
 void sh_help(char* params){
 	if(strLen(params) > 1){

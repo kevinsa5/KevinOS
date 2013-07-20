@@ -8,7 +8,7 @@ nasm int.asm -f elf -o int.o
 nasm KFS_creator.asm -f bin -o KFS.bin
 
 gcc -ffreestanding -m32 -c kernel.c -o kernel.o
-ld -melf_i386 -o kernel.bin -Ttext 0x1000 kernel_entry.o int.o kernel.o --oformat binary
+ld -melf_i386 -o kernel.bin -Ttext 0x200 kernel_entry.o int.o kernel.o --oformat binary
 dd if=kernel.bin count=100 of=padded_kernel.bin conv=sync && sync
 cat boot_sect.bin padded_kernel.bin KFS.bin > os-image
 ./sector_checker.py $(ls -l | grep "os-image")

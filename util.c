@@ -53,7 +53,7 @@ void intToString(int n, char s[]){
 	if(num < 0){
 		s--;
 		s[0] = '-';
-	}	
+	}
 }
 
 int strToInt(char* s){
