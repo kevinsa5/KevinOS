@@ -42,6 +42,7 @@ int modifier[6];
 volatile unsigned long int ticks;
 int commandLength;
 char counter;
+char prevCommand[20];
 
 #include "driver.c"
 #include "util.c"
@@ -50,6 +51,7 @@ char counter;
 
 void main(){
 	vidmem = (char*) 0xb8000;
+	prevCommand[0] = 0;
 	KFS = _binary_KFS_bin_start;
 	ttx = 0;
 	tty = 0;
@@ -64,6 +66,7 @@ void main(){
 		i++;
 	}
 	modifier[INSERT] = 1;
+	modifier[CAPSLOCK] = 0;
 	prompt = '$';
 	clearScreen(0x0F);
 	ttprintln("I am a computer! I am running Kevin's OS!"); 
@@ -103,6 +106,13 @@ void keyPressed(unsigned char code){
 		cursorBackwards();
 	} else if(code == 0x4D){ // right arrow
 		cursorForwards();
+	} else if(code == 0x48){ // up arrow
+		while(getChar(ttx-1,tty) != prompt){
+			ttprintChar(' ');
+			cursorBackwards();
+			cursorBackwards();
+                }
+		ttprint(prevCommand);
 	} else if(code == 0x1D){ // control on
 		modifier[CTRL] = 1;
 	} else if(code == 0x9D){ //control off
@@ -121,8 +131,8 @@ void keyPressed(unsigned char code){
 	} else if(code == 0x3A){ // capslock
 		modifier[CAPSLOCK]++;
 		modifier[CAPSLOCK] %= 2;
-	} 
-	printStatus(code);	
+	}
+	printStatus(code);
 	if(c == 0) return;
 	if(c != '\n'){
 		if(modifier[INSERT]){
@@ -148,9 +158,8 @@ void keyPressed(unsigned char code){
 		for(j = 0; j < (offset(ttx,tty)-i)/2; j++) command[j] = vidmem[i+2*j];
 		ttprintChar('\n');
 		commandLength = strLen(command);
-		
+		memCopy(command,prevCommand,commandLength);
 		sh_handler(command);
-		
 		ttprintChar(c);
 		ttprintChar(prompt);
 	}

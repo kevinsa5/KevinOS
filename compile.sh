@@ -13,11 +13,14 @@ ld -melf_i386 -o kernel.bin -Ttext 0x200 kernel_entry.o int.o kernel.o KFS.o --o
 dd if=kernel.bin count=100 of=padded_kernel.bin conv=sync && sync
 cat boot_sect.bin padded_kernel.bin > os-image
 ./sector_checker.py $(ls -l | grep "os-image")
-#qemu-system-i386 os-image
+
+qemu-system-i386 os-image
+
 rm floppy.img
 dd if=/dev/zero of=floppy.img bs=512 count=2880 && sync
 dd if=os-image of=floppy.img conv=notrunc && sync
 sudo dd if=floppy.img of=/dev/sdb conv=notrunc && sync
+
 #sudo virtualbox
 #qemu-system-i386 floppy.img
 #rm *.o
