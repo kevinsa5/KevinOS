@@ -16,10 +16,10 @@ cat boot_sect.bin padded_kernel.bin > os-image
 
 qemu-system-i386 os-image
 
-rm floppy.img
-dd if=/dev/zero of=floppy.img bs=512 count=2880 && sync
-dd if=os-image of=floppy.img conv=notrunc && sync
-sudo dd if=floppy.img of=/dev/sdb conv=notrunc && sync
+#rm floppy.img
+#dd if=/dev/zero of=floppy.img bs=512 count=2880 && sync
+#dd if=os-image of=floppy.img conv=notrunc && sync
+#sudo dd if=floppy.img of=/dev/sdb conv=notrunc && sync
 
 #sudo virtualbox
 #qemu-system-i386 floppy.img

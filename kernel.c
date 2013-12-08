@@ -84,7 +84,7 @@ void main(){
 	enableInterrupts();
 	
 	ttprintln("");
-	ttprintln("Prompt is ready, dickhead:");
+	ttprintln("Prompt is ready:");
 	ttprintChar(prompt);
 	printStatus(0x00);
 }

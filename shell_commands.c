@@ -13,9 +13,12 @@ void sh_help(char*);
 void sh_rand(char*);
 void sh_hexTable(char*);
 void sh_null(char*);
+void sh_cat(char*);
+void sh_ls(char*);
+void sh_dataTypes(char*);
 
-char *shCommandList[] = {"readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
+char *shCommandList[] = {"ls", "dataTypes","cat","readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_ls, sh_dataTypes, sh_cat,sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -34,6 +37,74 @@ void sh_handler(char* command){
 		ttprintln(program);
 	}
 }
+void sh_ls(char* params){
+	int i;
+        char* pointer = KFS;
+        char* KFS_sig = "KFS Begin";
+        for(i=0; i<strLen(KFS_sig)-1; i++){
+                if(pointer[i] != KFS_sig[i]){
+                        ttprint("Error! File system does not start with:");
+                        ttprint(KFS_sig);
+                        return;
+                }
+        }
+        pointer += 25;
+        // 25 is filesystem header, 94 is max # files
+        for(i=0; i < 94; i++){
+		if(pointer[0] == 0) continue;
+                int c;
+		for(c = 0; c < 10; c++){
+			ttprintChar(pointer[c]);
+		}
+		ttprintln("");
+                pointer += 16;
+        }
+}
+void sh_cat(char* params){
+	// params contains filename
+	if(strLen(params) == 1){
+		ttprintln("Must pass a filename.");
+		return;
+	}
+	int i;
+	char* pointer = KFS;
+	char* KFS_sig = "KFS Begin";
+	for(i=0; i<strLen(KFS_sig)-1; i++){
+		if(pointer[i] != KFS_sig[i]){
+			ttprint("Error! File system does not start with:");
+			ttprint(KFS_sig);
+			return;
+		}
+	}
+	pointer += 25;
+	// 25 is filesystem header, 94 is max # files
+	for(i=0; i < 94; i++){
+		if(strEquals(pointer,params)) break;
+		pointer += 16;
+	}
+	if(i == 94){
+		ttprint("File not found:");
+		ttprint(params);
+		return;
+	}
+	i = 0;
+	pointer += 10;
+	int sec,off,len;
+	sec = pointer[i++];
+
+	off = pointer[i++] << 8 ;
+	off |= pointer[i++];
+
+	len = pointer[i++] << 16;
+	len |= (pointer[i++] << 8);
+	len |= pointer[i++];
+
+	pointer = KFS + (sec+3)*512 + off;
+	for(i = 0; i < len; i++){
+		ttprintChar(pointer[i]);
+	}
+}
+
 void sh_readKFS(char* params){
 	// readKFS offset length
 	int i;
@@ -262,6 +333,12 @@ void sh_hexTable(char* params){
 			ttprint(" ");
 		}
 	}
+}
+void sh_dataTypes(char* params){
+	ttprint("char:"); ttprintIntln(sizeof(char));
+	ttprint("short:"); ttprintIntln(sizeof(short));
+	ttprint("int:"); ttprintIntln(sizeof(int));
+	ttprint("long:"); ttprintIntln(sizeof(long));
 }
 void sh_sti(char* params){
 	enableInterrupts();
