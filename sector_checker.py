@@ -25,5 +25,5 @@ if num == None:
 	print "\n"
 elif int(size)/512 != num + 1:
 	print "\n\n\n"
-	print "You need to change the number of sectors loading in boot_sect.asm (line %s?)" %(lineNum)
+	print "You need to change the number of sectors loading in boot_sect.asm (line %s, change to %s sectors?)" %(lineNum,int(size)/512-1)
 	print "\n\n\n"

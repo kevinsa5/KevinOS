@@ -14,6 +14,7 @@ void print(int, int, char *);
 void printChar(int, int, char, int);
 char getChar(int, int);
 int getColor(int, int);
+void ttprintCharColor(char,int);
 void ttprintChar(char);
 void ttprint(char *);
 void ttprintInt(int);
@@ -31,6 +32,7 @@ void rtcCall();
 void printStatus(unsigned char);
 void enableInterrupts();
 void disableInterrupts();
+void printPrompt();
 
 extern char _binary_KFS_bin_start[];
 char* KFS;
@@ -38,6 +40,7 @@ char* vidmem;
 int ttx;
 int tty;
 char prompt;
+int promptColor;
 int modifier[6];
 volatile unsigned long int ticks;
 int commandLength;
@@ -68,6 +71,7 @@ void main(){
 	modifier[INSERT] = 1;
 	modifier[CAPSLOCK] = 0;
 	prompt = '$';
+	promptColor = 0x02;
 	clearScreen(0x0F);
 	ttprintln("I am a computer! I am running Kevin's OS!"); 
 	ttprint("Preparing Interrupts...");
@@ -85,7 +89,7 @@ void main(){
 	
 	ttprintln("");
 	ttprintln("Prompt is ready:");
-	ttprintChar(prompt);
+	printPrompt();
 	printStatus(0x00);
 }
 //left: E0 4B E0 CB
@@ -148,7 +152,7 @@ void keyPressed(unsigned char code){
 		ttprintChar(c);
 	} else {
 		int i = offset(ttx,tty);		//find beginning of command (ie the prompt)
-		while(vidmem[i] != prompt){
+		while(vidmem[i] != prompt && vidmem[i+1] != promptColor){
 			i= i-2;
 		}
 		i+=2;
@@ -161,8 +165,11 @@ void keyPressed(unsigned char code){
 		memCopy(command,prevCommand,commandLength);
 		sh_handler(command);
 		ttprintChar(c);
-		ttprintChar(prompt);
+		printPrompt();
 	}
+}
+void printPrompt(){
+	ttprintCharColor(prompt,promptColor);
 }
 void delay(int mS){
 	enableInterrupts();
@@ -239,8 +246,9 @@ void ttprintIntln(int n){
 	ttprintInt(n);
 	ttprintChar('\n');
 }
-void ttprintChar(char c){
+void ttprintCharColor(char c, int col){
 	if(c == 0) return;
+	int printable = 1;
 	if(ttx >= width){
 		ttx = 0;
 		tty++;
@@ -250,14 +258,22 @@ void ttprintChar(char c){
 		tty++;
 		c = 0;
 	}
+	if(c == '\t'){
+		int i;
+		for(i = 0; i < 4; i++) ttprintChar(' ');
+		printable = 0;	
+	}
 	if(tty >= height){
 		scrollUp();
 	}
-	if(c != 0){
-		printChar(ttx,tty,c,0x0F);
+	if(c != 0 && printable){
+		printChar(ttx,tty,c,col);
 		ttx++;
 	}
 	setCursor(ttx,tty);
+}
+void ttprintChar(char c){
+	ttprintCharColor(c,0x0f);
 }
 void cursorForwards(){
 	if(getChar(ttx,tty) == 0) return;
@@ -278,7 +294,7 @@ void cursorBackwards(){
 		tty--;
 	}
 	setCursor(ttx,tty);
-	if(getChar(ttx,tty) == prompt){
+	if(getChar(ttx,tty) == prompt && getColor(ttx,tty) == promptColor){
 		ttx++;
 		setCursor(ttx,tty);
 	}

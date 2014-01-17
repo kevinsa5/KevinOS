@@ -8,17 +8,20 @@ void sh_cli(char*);
 void sh_htoi(char*);
 void sh_int(char*);
 void sh_charTable(char*);
+void sh_colorTable(char*);
 void sh_hexDump(char*);
 void sh_help(char*);
 void sh_rand(char*);
 void sh_hexTable(char*);
 void sh_null(char*);
 void sh_cat(char*);
+void sh_head(char*);
 void sh_ls(char*);
 void sh_dataTypes(char*);
 
-char *shCommandList[] = {"ls", "dataTypes","cat","readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_ls, sh_dataTypes, sh_cat,sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_hexTable, sh_null};
+
+char *shCommandList[] = {"ls", "head","dataTypes","cat","readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable","colorTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_ls, sh_head, sh_dataTypes, sh_cat,sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_colorTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -60,6 +63,19 @@ void sh_ls(char* params){
                 pointer += 16;
         }
 }
+void sh_head(char* params){
+	if(strLen(params) == 1){
+		ttprintln("Must pass a filename.");
+		return;
+	}
+	int i,numLines = 0;
+	char** pointer;
+	int len = getFilePointer(params, pointer);
+	for(i = 0; i < len && numLines < 10; i++){
+		ttprintChar((*pointer)[i]);
+		if((*pointer)[i] == '\n') numLines++;
+	}
+}
 void sh_cat(char* params){
 	// params contains filename
 	if(strLen(params) == 1){
@@ -67,20 +83,32 @@ void sh_cat(char* params){
 		return;
 	}
 	int i;
-	char* pointer = KFS;
+	unsigned char** pointer;
+	int len = getFilePointer(params,pointer);
+	for(i = 0; i < len; i++){
+		ttprintChar((*pointer)[i]);
+	}
+}
+/* 
+* stores pointer to file in param2, returns filesize
+*/
+int getFilePointer(char* params, unsigned char** pointer){
+	int i;
+	*pointer = KFS;
 	char* KFS_sig = "KFS Begin";
 	for(i=0; i<strLen(KFS_sig)-1; i++){
-		if(pointer[i] != KFS_sig[i]){
+		if((*pointer)[i] != KFS_sig[i]){
 			ttprint("Error! File system does not start with:");
 			ttprint(KFS_sig);
 			return;
 		}
 	}
-	pointer += 25;
+	*pointer += 25;
 	// 25 is filesystem header, 94 is max # files
 	for(i=0; i < 94; i++){
-		if(strEquals(pointer,params)) break;
-		pointer += 16;
+		//ttprintln(*pointer);
+		if(strEquals(params,*pointer) || strLen(params) == 11 && strBeginsWith(*pointer,params)) break;
+		*pointer += 16;
 	}
 	if(i == 94){
 		ttprint("File not found:");
@@ -88,23 +116,20 @@ void sh_cat(char* params){
 		return;
 	}
 	i = 0;
-	pointer += 10;
+	*pointer += 10;
 	int sec,off,len;
-	sec = pointer[i++];
+	sec = (*pointer)[i++];
 
-	off = pointer[i++] << 8 ;
-	off |= pointer[i++];
+	off = (*pointer)[i++] << 8 ;
+	off |= (*pointer)[i++];
 
-	len = pointer[i++] << 16;
-	len |= (pointer[i++] << 8);
-	len |= pointer[i++];
+	len = (*pointer)[i++] << 16;
+	len |= ((*pointer)[i++] << 8);
+	len |= (*pointer)[i++];
 
-	pointer = KFS + (sec+3)*512 + off;
-	for(i = 0; i < len; i++){
-		ttprintChar(pointer[i]);
-	}
+	*pointer = KFS + (sec+3)*512 + off;
+	return len;
 }
-
 void sh_readKFS(char* params){
 	// readKFS offset length
 	int i;
@@ -164,55 +189,6 @@ void sh_mario(char* params){
 	delay(550);
 	sh_beep("380 100");
 	delay(575);
-	int i;
-	for(i = 0; i < 2; i++){
-		sh_beep("510 100");
-		delay(450);
-		sh_beep("380 100");
-		delay(400);
-		sh_beep("320 100");
-		delay(500);
-		sh_beep("440 100");
-		delay(300);
-		sh_beep("480 80");
-		delay(330);
-		sh_beep("450 100");
-		delay(150);
-		sh_beep("430 100");
-		delay(300);
-		sh_beep("380 100");
-		delay(200);
-		sh_beep("660 80");
-		delay(200);
-		sh_beep("760 50");
-		delay(150);
-		sh_beep("860 100");
-		delay(300);
-		sh_beep("700 80");
-		delay(150);
-		sh_beep("760 50");
-		delay(350);
-		sh_beep("660 80");
-		delay(300);
-		sh_beep("520 80");
-		delay(150);
-		sh_beep("580 80");
-		delay(150);
-		sh_beep("480 80");
-		delay(500);
-	}
-	
-	sh_beep("500 100");
-	delay(300);
-	
-	sh_beep("760 100");
-	delay(100);
-	sh_beep("720 100");
-	delay(150);
-	sh_beep("680 100");
-	delay(150);
-	sh_beep("620 150");
-	delay(300);
 }
 void sh_delay(char* params){
 	delay(strToInt(params));
@@ -316,6 +292,18 @@ void sh_rand(char* params){
 	if(strLen(params) == 1) ttprintInt(rand(10));
 	else ttprintInt(rand(strToInt(params)));
 	return;
+}
+void sh_colorTable(char* params){
+	char a;
+	ttprint("high byte:");
+	for(a = 0; a < 16; a++){
+		ttprintCharColor('+',a*16 + 15);
+	}
+	ttprintChar('\n');
+	ttprint("low byte: ");
+	for(a = 0; a < 16; a++){
+		ttprintCharColor('+',15*16+a);
+	}
 }
 void sh_charTable(char* params){
 	char i;
