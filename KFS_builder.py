@@ -15,6 +15,11 @@ with open("KFS_template.asm","r") as template, open("KFS_gen.asm","w") as out:
 			sector = 0
 			offset = 0
 			for entry in files:
+				#if entry.endswith(".bin"):
+				#	with open(".files/{0}".format(entry), "rb") as temp:
+				#		
+				#	
+				#	continue
 				with open("./files/{0}".format(entry), "r") as temp:
 					#contents[entry] = temp.read().rstrip().encode('string_escape')
 					contents[entry] = temp.read().rstrip().replace('\n','\\n').replace('\t','\\t')

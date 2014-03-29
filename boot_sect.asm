@@ -3,26 +3,26 @@
 org 0x7c00
 
 jmp start
-  nop
-  db '        '
-  dw 512                        ; bytes per sector
-  db 1                          ; sectors per cluster
-  dw 36                         ; reserved sector count
-  db 2                          ; number of FATs
-  dw 16*14                      ; root directory entries
-  dw 18*2*80                    ; sector count
-  db 0F0h                       ; media byte
-  dw 9                          ; sectors per fat
-  dw 18                         ; sectors per track
-  dw 2                          ; number of heads
-  dd 0                          ; hidden sector count
-  dd 0                          ; number of sectors huge
-  db 0                          ; drive number
-  db 0                          ; reserved
-  db 29h                        ; signature
-  dd 0                          ; volume ID
-  db '           '              ; volume label
-  db 'ASDFG   '                 ; file system type
+;  nop
+;  db '        '
+;  dw 512                        ; bytes per sector
+;  db 1                          ; sectors per cluster
+;  dw 36                         ; reserved sector count
+;  db 2                          ; number of FATs
+;  dw 16*14                      ; root directory entries
+;  dw 18*2*80                    ; sector count
+;  db 0F0h                       ; media byte
+;  dw 9                          ; sectors per fat
+;  dw 18                         ; sectors per track
+;  dw 2                          ; number of heads
+;  dd 0                          ; hidden sector count
+;  dd 0                          ; number of sectors huge
+;  db 0                          ; drive number
+;  db 0                          ; reserved
+; db 29h                        ; signature
+;  dd 0                          ; volume ID
+;  db '           '              ; volume label
+;  db 'ASDFG   '                 ; file system type
   
 BOOT_DRIVE 		db 0
 MSG_1 			db 'Bootloader running successfully!', 0
@@ -52,6 +52,7 @@ mov bx, MSG_2
 call println
 mov ah, 0
 int 16h					; wait for keystroke
+
 call load_kernel
 call enter_pm
 jmp $
@@ -79,7 +80,7 @@ print:
 [bits 16]
 load_kernel:
 	mov bx, KERNEL_OFFSET
-	mov dh, 57;Change as kernel increases in size
+	mov dh, 56;Change as kernel increases in size
 	mov dl, [BOOT_DRIVE]
 	call disk_load
 	ret
