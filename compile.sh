@@ -37,13 +37,13 @@ fi
 cat boot_sect.bin padded_kernel.bin > os-image
 
 echo 'checking sector count'
-actual=$(ls -l | grep "os-image" | cut -d' ' -f 7)
+actual=$(ls -l | grep "os-image" | awk '{print $5}')
 
 if [ "$use_new_bootloader" = true ]; then
-    loaded=$(grep "NUM_SECTORS equ" < bootloader_stage2.asm | cut -d' ' -f 3)
+    loaded=$(grep "NUM_SECTORS equ" < bootloader_stage2.asm |awk '{print $3}')
     actual=$((actual/512-2))
 else
-    loaded=$(grep "NUM_SECTORS equ" < boot_sect2.asm | cut -d' ' -f 3)
+    loaded=$(grep "NUM_SECTORS equ" < boot_sect2.asm | awk '{print $3}')
     actual=$((actual/512-1))
 fi
 
