@@ -41,7 +41,7 @@ actual=$(ls -l | grep "os-image" | awk '{print $5}')
 
 if [ "$use_new_bootloader" = true ]; then
     loaded=$(grep "NUM_SECTORS equ" < bootloader_stage2.asm |awk '{print $3}')
-    actual=$((actual/512-2))
+    actual=$((actual/512-1))
 else
     loaded=$(grep "NUM_SECTORS equ" < boot_sect2.asm | awk '{print $3}')
     actual=$((actual/512-1))
@@ -66,4 +66,4 @@ else
 fi
 buildstatus="successful"
 rm *.o
-#rm *.bin
+rm *.bin
