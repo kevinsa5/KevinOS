@@ -9,6 +9,11 @@
 #define INSERT 3
 #define CAPSLOCK 4
 
+//terminal modes:
+#define TERMINAL 0
+#define EDITOR 1
+#define INTERPRETER 2
+
 void delay(int);
 void print(int, int, char *);
 void printChar(int, int, char, int);
@@ -26,7 +31,11 @@ void clearScreen(int);
 void scrollUp();
 void cursorBackwards();
 void cursorForwards();
+
 void keyPressed(unsigned char);
+void terminal_keyPressed(unsigned char, char);
+void editor_keyPressed(unsigned char, char);
+void interpreter_keyPressed(unsigned char, char);
 void pitCall();
 void rtcCall();
 void printStatus(unsigned char);
@@ -46,6 +55,10 @@ volatile unsigned long int ticks;
 int commandLength;
 char counter;
 char prevCommand[20];
+
+int terminalMode;
+
+char fileBuffer[height*width];
 
 #include "driver.c"
 #include "util.c"
@@ -70,6 +83,7 @@ void main(){
 	}
 	modifier[INSERT] = 1;
 	modifier[CAPSLOCK] = 0;
+	terminalMode = TERMINAL;
 	prompt = '$';
 	promptColor = 0x02;
 	clearScreen(0x0F);
@@ -98,6 +112,128 @@ void main(){
 //down: E0 50 E0 D0
 void keyPressed(unsigned char code){
 	char c = scancodeToAscii(code, modifier[SHIFT], modifier[CTRL], modifier[CAPSLOCK]);
+	if(terminalMode == TERMINAL){
+		terminal_keyPressed(code, c);
+	} else if(terminalMode == EDITOR){
+		editor_keyPressed(code, c);
+	} else if(terminalMode == INTERPRETER){
+		interpreter_keyPressed(code, c);
+	}
+}
+
+void editor_keyPressed(unsigned char code, char c){
+	char printable = 1;
+	if(code == 0x0E){ // backspace
+		if(ttx == 0 && tty == 0) return;
+		cursorBackwards();
+		int i = 0;
+		while(getChar(ttx + i, tty) != 0){
+			printChar(ttx+i,tty,getChar(ttx+i+1,tty),0x0F);
+			i++;
+		}
+		printable = 0;
+	} else if(code == 0x4B){ // left arrow
+		ttx--;
+		if(ttx == -1){
+			ttx = 0;
+			tty--;
+			if(tty == -1) tty = 0;
+		}
+		setCursor(ttx, tty);
+		printable = 0;
+	} else if(code == 0x4D){ // right arrow
+		ttx++;
+		if(ttx == width){
+			ttx = width-1;
+			tty++;
+			if(tty == height) tty = height-1;
+		}
+		setCursor(ttx, tty);
+		printable = 0;
+	} else if(code == 0x48){ // up arrow
+		tty--;
+		if(tty == -1) tty = 0;
+		setCursor(ttx, tty);
+		printable = 0;
+	} else if(code == 0x50){ // down arrow
+		tty++;
+		if(tty == height) tty = height-1;
+		setCursor(ttx, tty);
+		printable = 0;
+	} else if(code == 0xCB){ // left arrow release
+		printable = 0;
+	} else if(code == 0xCD){ // right arrow release
+		printable = 0;
+	} else if(code == 0xC8){ // up arrow release
+		printable = 0;
+	} else if(code == 0xCB){ // down arrow release
+		printable = 0;
+	} else if(code == 0x1D){ // control on
+		modifier[CTRL] = 1;
+		printable = 0;
+	} else if(code == 0x9D){ //control off
+		modifier[CTRL] = 0;
+		printable = 0;
+	} else if(code == 0x36 || code == 0x2A){ //shift on
+		modifier[SHIFT] = 1;
+		printable = 0;
+	} else if(code == 0xB6 || code == 0xAA){ //shift off
+		modifier[SHIFT] = 0;
+		printable = 0;
+	} else if(code == 0x38){ // alt on
+		modifier[ALT] = 1;
+		printable = 0;
+	} else if(code == 0xB8){ // alt off
+		modifier[ALT] = 0;
+		printable = 0;
+	} else if(code == 0x52){ // insert
+		modifier[INSERT]++;
+		modifier[INSERT] %= 2;
+		printable = 0;
+	} else if(code == 0x3A){ // capslock
+		modifier[CAPSLOCK]++;
+		modifier[CAPSLOCK] %= 2;
+		printable = 0;
+	}
+	printStatus(code);
+
+
+	if(modifier[CTRL] && c == 's'){
+		int x = 0;
+		int y = 0;
+		for(y = 0; y < height; y++){
+			for(x = 0; x < width; x++){
+				fileBuffer[y*width + x] = getChar(x,y);
+			}
+		}
+		printable = 0;
+		clearScreen(0x00);
+		terminalMode = TERMINAL;
+		ttx = 0; tty = 0;
+		setCursor(ttx,tty);
+		printPrompt();
+		printStatus(0x00);
+		return;
+	}
+
+	if(c == 0) return;
+	if(modifier[INSERT] && printable == 1){
+		int i = 0;
+		while(getChar(ttx + i, tty) != 0){
+			i++;
+		}
+		while(i > 0){
+			printChar(ttx + i,tty,getChar(ttx+i-1,tty),0x0F);
+			i--;
+		}
+	}
+	ttprintChar(c);
+
+
+}
+void interpreter_keyPressed(unsigned char code, char c){}
+
+void terminal_keyPressed(unsigned char code, char c){
 	if(code == 0x0E){ // backspace
 		if(getChar(ttx-1,tty) == prompt) return;
 		cursorBackwards();
@@ -164,8 +300,10 @@ void keyPressed(unsigned char code){
 		commandLength = strLen(command);
 		memCopy(command,prevCommand,commandLength);
 		sh_handler(command);
-		ttprintChar(c);
-		printPrompt();
+		if(terminalMode == TERMINAL){
+			ttprintChar(c);
+			printPrompt();
+		}
 	}
 }
 void printPrompt(){
@@ -193,37 +331,55 @@ void printStatus(unsigned char code){
 		printChar(i,absolute_height,' ',0x0F);
 	}
 	int statusX = 0;
-	print(statusX, absolute_height, "KeyCode:");
-	statusX += 8;
 	char str[10];
+	print(statusX, absolute_height, "Code:");
+	statusX += 5;
 	charToString(code,str);
 	if(code != -1) print(statusX, absolute_height, str);
 	statusX += 4;
-	print(statusX, absolute_height, " Insert:");
-	statusX += 8;
+
+	print(statusX, absolute_height, " Ins:");
+	statusX += 5;
 	printChar(statusX, absolute_height, modifier[INSERT]+'0', 0x0F);
 	statusX += 1;
+
 	print(statusX, absolute_height, " Shift:");
 	statusX += 7;
 	printChar(statusX, absolute_height, modifier[SHIFT]+'0', 0x0F);
 	statusX += 1;
+
 	print(statusX, absolute_height, " Caps:");
 	statusX += 6;
 	printChar(statusX, absolute_height, modifier[CAPSLOCK]+'0', 0x0F);
 	statusX += 1;
+
 	print(statusX, absolute_height, " Ctrl:");
 	statusX += 6;
 	printChar(statusX, absolute_height, modifier[CTRL]+'0', 0x0F);
 	statusX += 1;
+
 	print(statusX, absolute_height, " Alt:");
 	statusX += 5;
 	printChar(statusX, absolute_height, modifier[ALT]+'0', 0x0F);
 	statusX += 1;
-	print(statusX, absolute_height, " Last Entry:");
-	statusX += 12;
+
+	print(statusX, absolute_height, " Last:");
+	statusX += 6;
 	intToString(commandLength,str);
 	print(statusX, absolute_height, str);
-	statusX += strLen(str-1);
+	statusX += strLen(str)-1;
+	
+	print(statusX, absolute_height, " Mode:");
+	statusX += 6;
+	printChar(statusX, absolute_height, terminalMode+'0', 0x0F);
+	statusX += 1;	
+
+	print(statusX, absolute_height, " ttx:");
+	statusX += 5;
+	intToString(ttx, str);
+	print(statusX, absolute_height, str);
+	statusX += strLen(str)-1;
+	
 	print(statusX, absolute_height, " Time:");
 	statusX += 6;
 	intToString(ticks/PITfreq,str);
@@ -299,6 +455,7 @@ void cursorBackwards(){
 		setCursor(ttx,tty);
 	}
 }
+	
 void scrollUp(){
 	int j;
 	for(j = 0; j < height-1; j++){
@@ -335,6 +492,8 @@ void setCursor(int x, int y){
 	writeByteToPort(REG_SCREEN_DATA, high);
 	writeByteToPort(REG_SCREEN_CTRL, 15);
 	writeByteToPort(REG_SCREEN_DATA, low);
+	ttx = x;
+	tty = y;
 }
 int offset(int x, int y){
 	return 2*(y*width+x);

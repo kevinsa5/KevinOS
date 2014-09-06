@@ -8,7 +8,7 @@
 
     ;BIOS_DATA_AREA equ 0x400 
 	KERNEL_ADDRESS equ 0x200
-	NUM_SECTORS equ 57
+	NUM_SECTORS equ 53
 
 ; GDT definitions
 	gdt_start:

@@ -1,3 +1,4 @@
+
 void sh_readKFS(char*);
 void sh_glissando(char*);
 void sh_mario(char*);
@@ -18,10 +19,11 @@ void sh_cat(char*);
 void sh_head(char*);
 void sh_ls(char*);
 void sh_dataTypes(char*);
+void sh_edit(char*);
 
 
-char *shCommandList[] = {"ls", "head","dataTypes","cat","readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable","colorTable", "hexTable","null"};
-void (*shFunctionList[])(char*) = {sh_ls, sh_head, sh_dataTypes, sh_cat,sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_colorTable, sh_hexTable, sh_null};
+char *shCommandList[] = {"edit", "ls", "head","dataTypes","cat","readKFS", "glissando", "mario", "delay", "beep", "sti", "cli", "htoi", "int", "hexDump", "help","rand","charTable","colorTable", "hexTable","null"};
+void (*shFunctionList[])(char*) = {sh_edit, sh_ls, sh_head, sh_dataTypes, sh_cat,sh_readKFS, sh_glissando, sh_mario, sh_delay, sh_beep, sh_sti, sh_cli, sh_htoi, sh_int, sh_hexDump, sh_help, sh_rand, sh_charTable, sh_colorTable, sh_hexTable, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -36,10 +38,25 @@ void sh_handler(char* command){
 	while(!strEquals(shCommandList[i],program) && !strEquals(shCommandList[i],"null")) i++;
 	if(!strEquals(shCommandList[i],"null")) (*shFunctionList[i])(params);
 	else {
-		ttprint("Function not found: ");
+		ttprint("Command not found: ");
 		ttprintln(program);
 	}
 }
+
+void sh_edit(char* params){
+	terminalMode = EDITOR;
+	clearScreen(0x0F);
+	int x = 0;
+	int y = 0;
+	for(y = 0; y < height; y++){
+		for(x = 0; x < width; x++){
+			printChar(x,y,fileBuffer[y*width + x],0x0F);
+		}
+	}
+	setCursor(0,0);
+	
+}
+
 void sh_ls(char* params){
 	int i;
         char* pointer = KFS;
@@ -84,9 +101,14 @@ void sh_cat(char* params){
 	}
 	int i;
 	unsigned char** pointer;
-	int len = getFilePointer(params,pointer);
-	for(i = 0; i < len; i++){
-		ttprintChar((*pointer)[i]);
+	if(strEquals(params,"buf")){
+		for(i = 0; i < width*height; i++)
+			ttprintChar(fileBuffer[i]);
+	} else {
+		int len = getFilePointer(params,pointer);
+		for(i = 0; i < len; i++){
+			ttprintChar((*pointer)[i]);
+		}
 	}
 }
 /* 
@@ -152,7 +174,8 @@ void sh_readKFS(char* params){
 		ttprintChar(pointer[i]);
 	}
 }
-void sh_glissando(char* params){
+
+void sh_glissando(char* params){/*
 	int i = 220;
 	//xxxx 50
 	char param[8];
@@ -172,9 +195,10 @@ void sh_glissando(char* params){
 		sh_beep(param);
 		i = i + 20;
 	}
-	sh_beep("0 0");
+	sh_beep("0 0");*/
 }
-void sh_mario(char* params){
+
+void sh_mario(char* params){/*
 	sh_beep("660 100");
 	delay(150);
 	sh_beep("660 100");
@@ -188,7 +212,7 @@ void sh_mario(char* params){
 	sh_beep("770 100");
 	delay(550);
 	sh_beep("380 100");
-	delay(575);
+	delay(575);*/
 }
 void sh_delay(char* params){
 	delay(strToInt(params));
@@ -268,10 +292,11 @@ void sh_hexDump(char* params){
 	*/
 }
 void sh_help(char* params){
+	/*
 	if(strLen(params) > 1){
 		ttprintIntln(strLen(params));
 		ttprintln("help does not accept parameters");
-	}
+	}*/
 	int i = 0;
 	ttprint("Available commands are:");
 	while(!strEquals(shCommandList[i],"null")){
