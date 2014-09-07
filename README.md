@@ -4,16 +4,16 @@ KevinOS Notes:
 Compilation:
 ------------
 
-+ `$ ./compile.sh` overwrites the filesystem of `/dev/sdb` -- be careful!
++ `$ ./compile.sh write` overwrites the filesystem of `/dev/sdb` -- be careful!
 
-+ `$ qemu-system-i386 os-image` can be used for quicker testing. 
++ `$ qemu-system-i386 os-image` can be used for quicker testing, if recompilation is not necessary. 
 
-+ Testing is done with Oracle Virtualbox, QEMU, and a Lenovo T430. Development done on 64-bit Linux Mint 15 with a standard GNU toolchain (GCC, LD, etc).
++ Testing is done with QEMU on a Lenovo T430. Development done on 64-bit Linux Mint Debian Edition with the standard GNU toolchain (GCC, LD, etc).
 
 Features:
 ---------
 
-KevinOS currently loads a 32-bit C kernel in Protected Mode.  It detects all interrupt calls and has preliminary PIT-handling code.  Keypress detection for a standard laptop keyboard is complete and the OS boots into a _very_ basic shell.  Pseudorandom number generation implemented the same as the C standard document. A custom file system (KFS) is under development, just to learn more about low-level coding.
+KevinOS currently loads a 32-bit C kernel in Protected Mode.  It detects all interrupt calls and has preliminary PIT-handling code.  Keypress detection for a standard laptop keyboard is complete and the OS boots into a _very_ basic shell.  A basic text-buffer editor is available with `edit`, and Pseudorandom number generation implemented the same as the C standard document. A custom file system (KFS) is under development, just to learn more about low-level coding.
 
 Unlicense:
 ----------

@@ -50,7 +50,7 @@ int ttx;
 int tty;
 char prompt;
 int promptColor;
-int modifier[6];
+char modifier[6];
 volatile unsigned long int ticks;
 int commandLength;
 char counter;
@@ -77,10 +77,10 @@ void main(){
 	int i = 0;
 	commandLength = 0;
 	counter = '0';
-	while(modifier[i] != 0){
-		modifier[i] = 0;
-		i++;
-	}
+
+	memFill(modifier, 0, 5);
+	memFill(fileBuffer, 0, height*width);
+
 	modifier[INSERT] = 1;
 	modifier[CAPSLOCK] = 0;
 	terminalMode = TERMINAL;
@@ -228,8 +228,6 @@ void editor_keyPressed(unsigned char code, char c){
 		}
 	}
 	ttprintChar(c);
-
-
 }
 void interpreter_keyPressed(unsigned char code, char c){}
 
