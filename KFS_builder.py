@@ -8,7 +8,7 @@ if len(files) > 94:
 for i in files:
 	if len(i) > 10:
 		print "Filename is too long! Can only be ten characters, is currently {0} :{1}".format(len(i),i)
-		exit()
+		exit(1)
 with open("KFS_template.asm","r") as template, open("KFS_gen.asm","w") as out:
 	for line in template:
 		if "insert file data here" in line:
@@ -22,14 +22,15 @@ with open("KFS_template.asm","r") as template, open("KFS_gen.asm","w") as out:
 				#	continue
 				with open("./files/{0}".format(entry), "r") as temp:
 					#contents[entry] = temp.read().rstrip().encode('string_escape')
-					contents[entry] = temp.read().rstrip().replace('\n','\\n').replace('\t','\\t')
+					#contents[entry] = temp.read().rstrip().replace('\n','\\n').replace('\t','\\t')
+					contents[entry] = temp.read().replace('\n','\\n').replace('\t','\\t')
 				paddingZeroes = ",0" * (10-len(entry))
 				out.write("db '{0}'{1}\n".format(entry,paddingZeroes))
 				out.write("db {0}\n".format(sector))
 				hb = offset >> 8
 				lb = offset - hb*256
 				out.write("db {0},{1}\n".format(hb,lb))
-				filesize = os.path.getsize("./files/" + entry)-1 #len(contents[entry])
+				filesize = os.path.getsize("./files/" + entry) #len(contents[entry])
 				hhb = filesize >> 16
 				hb = (filesize-hhb*256*256) >>8
 				lb = (filesize-hhb*256*256-hb*256)

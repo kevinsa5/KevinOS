@@ -148,25 +148,25 @@ void reverseInPlace(char s[]){
 		s[j] = c;
 	}
 }
-/*
+
 int isLower(char c){
 	return c >= 'a' && c <= 'z';
 }
 int isUpper(char c){
 	return c >= 'A' && c <= 'Z';
 }
-*/
+
 int isAlpha(char c){
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
-/*
+
 int isNumeric(char c){
 	return c >= '0' && c <= '9';
 }
 
 int isAlphaNumeric(char c){
 	return isAlpha(c) || isNumeric(c);
-}*/
+}
 static unsigned long int rNum;
 void setSeed(unsigned int seed){
 	rNum = seed;

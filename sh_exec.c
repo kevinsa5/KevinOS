@@ -27,7 +27,7 @@ void exec_status(char*);
 char *execCommandList[] =           {    "seti",    "setc",    "printi",    "printc",    "addi",    "multi",    "randi",    "inc",    "dec",    "setcmp1",  "setcmp2",     "status"   ,  ""};
 void (*execFunctionList[])(char*) = {exec_seti, exec_setc, exec_printi, exec_printc, exec_addi, exec_multi, exec_randi, exec_inc, exec_dec, exec_setcmp1, exec_setcmp2, exec_status, exec_null};
 
-void sh_exec(char* params){
+void sh_exec(char* unused_params){
 	terminalMode = INTERPRETER;
 	char line[width+1];
 	line[width] = 0;
@@ -38,7 +38,7 @@ void sh_exec(char* params){
 	}
 	
 	//iterate through the buffer
-	int lineNum;	
+	int lineNum;
 	for(lineNum = 0; lineNum < height; lineNum++){
 		// read line, removing null chars along the way:
 		int i = 0;

@@ -22,7 +22,7 @@ ld -melf_i386 -r -b binary -o KFS.o KFS.bin
 
 echo "compiling kernel"
 gcc -ffreestanding -m32 -c kernel.c -o kernel.o
-ld -melf_i386 -o kernel.bin -Ttext 0x200 kernel_entry.o int.o kernel.o KFS.o --oformat binary --entry main
+ld -melf_i386 -o kernel.bin -Ttext 0x8000 kernel_entry.o int.o kernel.o KFS.o --oformat binary --entry main
 dd if=kernel.bin count=100 of=padded_kernel.bin conv=sync &> /dev/null && sync
 
 echo "assembling bootloader"

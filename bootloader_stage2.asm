@@ -7,8 +7,11 @@
     jmp 0x0000:start
 
     ;BIOS_DATA_AREA equ 0x400 
-	KERNEL_ADDRESS equ 0x200
-	NUM_SECTORS equ 55
+	;KERNEL_ADDRESS equ 0x200
+	; Note that if you change the kernel address, you also must change it
+	; in compile.sh (-Ttext)
+	KERNEL_ADDRESS equ 0x8000
+	NUM_SECTORS equ 69
 
 ; GDT definitions
 	gdt_start:
@@ -58,21 +61,21 @@
 
 ; Detect Low Memory (below 1Mb, usually below 640Kb)
 
-    xor ax, ax
-    int 0x12
-    jc .mem_error
-    ; ax now contains the # of kB from zero of continuous memory
-    mov bx, ax
-    call printint
-    mov bx, MSG_KB
-    call println
-    jmp .wait
+;    xor ax, ax
+;    int 0x12
+;    jc .mem_error
+;    ; ax now contains the # of kB from zero of continuous memory
+;    mov bx, ax
+;    call printint
+;    mov bx, MSG_KB
+;    call println
+;    jmp .wait
 
-.mem_error:
-    jmp $
+;.mem_error:
+;    jmp $
 
-; Wait for keystroke
-.wait:
+;; Wait for keystroke
+;.wait:
 	mov bx, MSG_2
 	call println
 	mov ah, 0
@@ -92,7 +95,7 @@
 	mov dl, [BOOT_DRIVE]
 	
 ; load DH sectors to ES:BX from drive DL
-; Add a looping thing here to load one sector at a time, rather than all at once
+; Add a looping thing here to load one sector at a time, rather than all at once?
 	push dx
 	mov ah, 0x02		; 0x13 read sector
 ;.load_loop:
