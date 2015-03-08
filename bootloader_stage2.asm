@@ -11,7 +11,7 @@
 	; Note that if you change the kernel address, you also must change it
 	; in compile.sh (-Ttext)
 	KERNEL_ADDRESS equ 0x8000
-	NUM_SECTORS equ 71
+	NUM_SECTORS equ 66
 
 ; GDT definitions
 	gdt_start:

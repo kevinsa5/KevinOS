@@ -1,5 +1,6 @@
 void sh_readKFS(char*);
-void sh_hexDump(char*);
+void sh_textDump(char*);
+void sh_memDump(char*);
 void sh_help(char*);
 void sh_null(char*);
 void sh_cat(char*);
@@ -12,6 +13,7 @@ void sh_mario(char*);
 void sh_delay(char*);
 void sh_beep(char*);
 void sh_htoi(char*);
+void sh_itoh(char*);
 void sh_int(char*);
 void sh_rand(char*);
 void sh_colorTable(char*);
@@ -22,13 +24,14 @@ void sh_sti(char*);
 void sh_cli(char*);
 void sh_buildData(char*);
 void sh_memalloc(char*);
+void sh_memfree(char*);
 void sh_poke(char*);
 
 #include "sh_exec.c"
 #include "buildData.c"
 
-char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "hexDump", "help", "glissando", "mario","delay", "beep", "htoi", "int", "rand", "colorTable", "charTable", "hexTable", "dataTypes", "sti", "cli", "buildData", "memalloc", "poke", "null"};
-void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_hexDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_poke, sh_null};
+char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","delay", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "null"};
+void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -80,7 +83,7 @@ void sh_ls(char* params){
     for(i=0; i < 94; i++){
 		if(pointer[0] == 0) continue;
 		if(!firstTime){
-			ttprintln("\n");
+			ttprint("\n");
 		} else {
 			firstTime = 0;
 		}
@@ -281,12 +284,18 @@ void sh_htoi(char* params){
 	}
 	ttprintInt(sum);
 }
+void sh_itoh(char* params){
+	char s[3];
+	s[2] = 0;
+	itoh(strToInt(params),s);
+	ttprintln(s);
+}
 void sh_int(char* params){
 	ttprintIntln(strToInt(params));
 }
 
-void sh_hexDump(char* params){
-	// hexDump pointer length
+void sh_textDump(char* params){
+	// textDump pointer length
 	int i;
 	for(i=0;i<strLen(params);i++){
 		if(params[i] == ' ') break;
@@ -300,6 +309,28 @@ void sh_hexDump(char* params){
 	int length = strToInt(substr2);
 	for(i=0;i<length;i++){
 		ttprintChar(pointer[i]);
+	}
+}
+
+void sh_memDump(char* params){
+	// textDump pointer length
+	int i;
+	for(i=0;i<strLen(params);i++){
+		if(params[i] == ' ') break;
+	}
+	char substr[i+1];
+	memCopy(params,substr,i);
+	substr[i] = 0;
+	char* pointer = (char*) ((int*)strToInt(substr));
+	char substr2[strLen(params)-i];
+	memCopy(params+i+1,substr2,strLen(params)-i);
+	int length = strToInt(substr2);
+	char hex[3];
+	hex[2] = 0;
+	for(i=0;i<length;i++){
+		itoh(pointer[i], hex);
+		ttprint(hex);
+		ttprint(" ");
 	}
 }
 
@@ -372,7 +403,17 @@ void sh_help(char* params){
 }
 void sh_memalloc(char* params){
 	char* ptr = (char*) malloc(strToInt(params));
-	ttprintIntln((int)ptr);
+	ttprintInt((int)ptr);
+}
+void sh_memfree(char* params){
+	int i;
+	for(i=0;i<strLen(params);i++){
+		if(params[i] == ' ') break;
+	}
+	params[i] = 0;
+	void* pointer = (void*) ((int*)strToInt(params));
+	int value = strToInt(params+i+1);
+	free(pointer, value);
 }
 void sh_poke(char* params){
 	// poke pointer byte(decimal)

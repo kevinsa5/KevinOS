@@ -86,7 +86,7 @@ void main(){
 	modifier[CAPSLOCK] = 0;
 	terminalMode = TERMINAL;
 	prompt = 21;
-	promptColor = 0x02;
+	promptColor = 0x0A;
 	clearScreen(0x0F);
 	//ttprintln("I am a computer! I am running Kevin's OS!"); 
 	ttprint("KevinOS build ");
