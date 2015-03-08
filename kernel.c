@@ -60,6 +60,7 @@ int terminalMode;
 
 char fileBuffer[height*width];
 
+#include "malloc.c"
 #include "driver.c"
 #include "util.c"
 #include "IDT.c"
@@ -84,14 +85,16 @@ void main(){
 	modifier[INSERT] = 1;
 	modifier[CAPSLOCK] = 0;
 	terminalMode = TERMINAL;
-	prompt = '$';
+	prompt = 21;
 	promptColor = 0x02;
 	clearScreen(0x0F);
-	ttprintln("I am a computer! I am running Kevin's OS!"); 
-	ttprint("Preparing Interrupts...");
+	//ttprintln("I am a computer! I am running Kevin's OS!"); 
+	ttprint("KevinOS build ");
+	ttprintIntln(getBuildID());
+	ttprint("Setting up interrupt descriptor table...");
 	idt_init();
 	setTimerFreq(1000);
-	ttprintln(" done");
+	ttprintln("done");
 	
 	//turn on bit 6 of register B:
 	disableInterrupts();
@@ -101,8 +104,9 @@ void main(){
 	writeByteToPort(0x71, prev | 0x40);	
 	enableInterrupts();
 	
-	ttprintln("");
-	ttprintln("Prompt is ready:");
+	//ttprintln("");
+	//ttprintln("Prompt is ready:");
+
 	printPrompt();
 	printStatus(0x00);
 }
@@ -249,7 +253,7 @@ void terminal_keyPressed(unsigned char code, char c){
 			ttprintChar(' ');
 			cursorBackwards();
 			cursorBackwards();
-                }
+        }
 		ttprint(prevCommand);
 	} else if(code == 0x1D){ // control on
 		modifier[CTRL] = 1;
@@ -285,7 +289,7 @@ void terminal_keyPressed(unsigned char code, char c){
 		}
 		ttprintChar(c);
 	} else {
-		int i = offset(ttx,tty);		//find beginning of command (ie the prompt)
+		int i = offset(ttx,tty); //find beginning of command (ie the prompt)
 		while(vidmem[i] != prompt && vidmem[i+1] != promptColor){
 			i= i-2;
 		}
@@ -330,6 +334,7 @@ void printStatus(unsigned char code){
 	}
 	int statusX = 0;
 	char str[10];
+	
 	print(statusX, absolute_height, "Code:");
 	statusX += 5;
 	charToString(code,str);
@@ -372,11 +377,20 @@ void printStatus(unsigned char code){
 	printChar(statusX, absolute_height, terminalMode+'0', 0x0F);
 	statusX += 1;	
 
-	print(statusX, absolute_height, " ttx:");
+	//print(statusX, absolute_height, " ttx:");
+	//statusX += 5;
+	//intToString(ttx, str);
+	//print(statusX, absolute_height, str);
+	//statusX += strLen(str)-1;
+	
+	print(statusX, absolute_height, " mem:");
 	statusX += 5;
-	intToString(ttx, str);
+	doubleToString(heapUsage(), str);
 	print(statusX, absolute_height, str);
 	statusX += strLen(str)-1;
+	
+	print(statusX, absolute_height, "%");
+	statusX++;
 	
 	print(statusX, absolute_height, " Time:");
 	statusX += 6;

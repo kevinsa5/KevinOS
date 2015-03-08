@@ -13,7 +13,7 @@ Compilation:
 Features:
 ---------
 
-KevinOS currently loads a 32-bit C kernel in Protected Mode.  It detects all interrupt calls and has preliminary PIT-handling code.  Keypress detection for a standard laptop keyboard is complete and the OS boots into a _very_ basic shell.  A basic text-buffer editor is available with `edit`, and Pseudorandom number generation implemented the same as the C standard document. A custom file system (KFS) is under development, just to learn more about low-level coding.
+KevinOS currently loads a 32-bit C kernel in Protected Mode.  It detects all interrupt calls and has basic PIT-handling code.  Keypress detection for a standard laptop keyboard is more or less complete and the OS boots to a _very_ basic shell.  A basic text-buffer editor is available with `edit`, and code in a pseudo-assembly language can be run with `exec`.  A very naive `malloc` is in place, perhaps someday it'll be more than the bare minimum. The shell has a few odds and ends (beeps, PRNG, etc).  A custom file system (KFS) is used, just for kicks. 
 
 Unlicense:
 ----------

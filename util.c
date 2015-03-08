@@ -32,6 +32,16 @@ int strLen(char* str){
 	return i;
 }
 
+void doubleToString(double n, char* s){
+	//default to two decimal places
+	int intpart = (int) n;
+	int floatpart = (int)(100*n) % 100;
+	intToString(intpart, s);
+	int len = strLen(s)-1;
+	s[len] = '.';
+	intToString(floatpart, (s+len+1));
+}
+
 void intToString(int n, char s[]){
 	int num = n;
 	if(n == 0){

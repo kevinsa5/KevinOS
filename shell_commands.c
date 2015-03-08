@@ -1,6 +1,4 @@
-
 void sh_readKFS(char*);
-
 void sh_hexDump(char*);
 void sh_help(char*);
 void sh_null(char*);
@@ -22,16 +20,20 @@ void sh_hexTable(char*);
 void sh_dataTypes(char*);
 void sh_sti(char*);
 void sh_cli(char*);
+void sh_buildData(char*);
+void sh_memalloc(char*);
+void sh_poke(char*);
 
 #include "sh_exec.c"
+#include "buildData.c"
 
-
-char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "hexDump", "help", "glissando", "mario","delay", "beep", "htoi", "int", "rand", "colorTable", "charTable", "hexTable", "dataTypes", "sti", "cli", "null"};
-void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_hexDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_null};
+char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "hexDump", "help", "glissando", "mario","delay", "beep", "htoi", "int", "rand", "colorTable", "charTable", "hexTable", "dataTypes", "sti", "cli", "buildData", "memalloc", "poke", "null"};
+void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_hexDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_poke, sh_null};
 
 void sh_handler(char* command){
 	int i=0;
 	while(command[i]!=' ' && command[i]!=0) i++;
+	if(i == 0) return;
 	char program[i+1];
 	memCopy(command,program,i);
 	program[i] = 0;
@@ -59,31 +61,35 @@ void sh_edit(char* params){
 		}
 	}
 	setCursor(0,0);
-	
 }
 
 void sh_ls(char* params){
 	int i;
-        char* pointer = KFS;
-        char* KFS_sig = "KFS Begin";
-        for(i=0; i<strLen(KFS_sig)-1; i++){
-                if(pointer[i] != KFS_sig[i]){
-                        ttprint("Error! File system does not start with:");
-                        ttprint(KFS_sig);
-                        return;
-                }
-        }
-        pointer += 25;
-        // 25 is filesystem header, 94 is max # files
-        for(i=0; i < 94; i++){
+	char firstTime = 1;
+    char* pointer = KFS;
+    char* KFS_sig = "KFS Begin";
+    for(i=0; i<strLen(KFS_sig)-1; i++){
+            if(pointer[i] != KFS_sig[i]){
+                    ttprint("Error! File system does not start with:");
+                    ttprint(KFS_sig);
+                    return;
+            }
+    }
+    pointer += 25;
+    // 25 is filesystem header, 94 is max # files
+    for(i=0; i < 94; i++){
 		if(pointer[0] == 0) continue;
-                int c;
-		for(c = 0; c < 10; c++){
+		if(!firstTime){
+			ttprintln("\n");
+		} else {
+			firstTime = 0;
+		}
+	    int c;
+		for(c = 0; c < 10 && pointer[c] != 0; c++){
 			ttprintChar(pointer[c]);
 		}
-		ttprintln("");
-                pointer += 16;
-        }
+        pointer += 16;
+    }
 }
 void sh_head(char* params){
 	if(strLen(params) == 1){
@@ -209,21 +215,22 @@ void sh_glissando(char* params){
 	}
 	sh_beep("0 0");
 }
+
 void sh_mario(char* params){
-	sh_beep("660 100");
-	delay(150);
-	sh_beep("660 100");
-	delay(300);
-	sh_beep("660 100");
-	delay(300);
-	sh_beep("510 100");
+	int i;
+	sh_beep("659 100");
 	delay(100);
-	sh_beep("660 100");
-	delay(300);
-	sh_beep("770 100");
-	delay(550);
-	sh_beep("380 100");
-	delay(575);
+	sh_beep("659 100");
+	delay(150);
+	sh_beep("659 100");
+	delay(200);
+	sh_beep("523 100");
+	delay(75);
+	sh_beep("659 100");
+	delay(200);
+	sh_beep("784 100");
+	delay(500);
+	sh_beep("392 100");
 }
 void sh_delay(char* params){
 	delay(strToInt(params));
@@ -323,7 +330,7 @@ void sh_colorTable(char* params){
 }
 void sh_charTable(char* params){
 	char i;
-	for(i = 0; i < 127; i++){
+	for(i = -128; i < 127; i++){
 		ttprintChar(i);
 	}
 }
@@ -350,7 +357,10 @@ void sh_sti(char* params){
 void sh_cli(char* params){
 	disableInterrupts();
 }
-
+void sh_buildData(char* params){
+	ttprint("Build ID:");
+	ttprintIntln(getBuildID());
+}
 void sh_help(char* params){
 	int i = 0;
 	ttprint("Available commands are:");
@@ -359,6 +369,26 @@ void sh_help(char* params){
 		ttprint(shCommandList[i]);
 		i++;
 	}
+}
+void sh_memalloc(char* params){
+	char* ptr = (char*) malloc(strToInt(params));
+	ttprintIntln((int)ptr);
+}
+void sh_poke(char* params){
+	// poke pointer byte(decimal)
+	int i;
+	for(i=0;i<strLen(params);i++){
+		if(params[i] == ' ') break;
+	}
+	char substr[i+1];
+	memCopy(params,substr,i);
+	substr[i] = 0;
+	char* pointer = (char*) ((int*)strToInt(substr));
+	
+	char substr2[strLen(params)-i];
+	memCopy(params+i+1,substr2,strLen(params)-i);
+	int value = strToInt(substr2);
+	*pointer = value;
 }
 void sh_null(char* params){
 	ttprintln("wtf");
