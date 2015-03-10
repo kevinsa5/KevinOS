@@ -11,9 +11,17 @@ void reverseInPlace(char*);
 void setSeed(unsigned int);
 unsigned int rand(unsigned int);
 int pow(int, int);
+int numDigits(int);
 int isAlpha(char);
-//int isNumeric(char);
-//int isAlphaNumeric(char);
+int isNumeric(char);
+int isAlphaNumeric(char);
+
+struct StringListNode
+{
+    char* str;
+    struct StringListNode *next;
+    struct StringListNode *prev;
+};
 
 void memFill(char* to, char filler, int len){
 	int i;
@@ -72,9 +80,11 @@ int strToInt(char* s){
 	int n = 0;
 	int i = (sign == 1 ? 0 : 1);
 	int len = strLen(s);
+	int power = pow(10,len-i-2);
 	while(s[i] != 0){
-		n += (s[i] - '0') * pow(10,len-i-2);
+		n += (s[i] - '0') * power;
 		i++;
+		power /= 10;
 	}
 	return n*sign;
 }
@@ -194,8 +204,39 @@ unsigned int rand(unsigned int max){
 	return (unsigned int)(rNum/65536) % max;
 }
 
-int pow(int base, int power){
-	int n = 1;
-	while(power-- > 0) n*=base;
-	return n;
-} 
+int pow(int base, int exp)
+{
+	// exponentiation by squaring
+    int result = 1;
+    while (exp)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        base *= base;
+    }
+    return result;
+}
+int numDigits(int num){
+	if ( num < 10 )
+		return 1;
+	if ( num < 100 )
+		return 2;
+	if ( num < 1000 )
+		return 3;
+	if ( num < 10000 )
+		return 4;
+	if ( num < 100000 )
+		return 5;
+	if ( num < 1000000 )
+		return 6;
+	if ( num < 10000000 )
+		return 7;
+	if ( num < 100000000 )
+		return 8;
+	if ( num < 1000000000 )
+		return 9;
+	if ( num < 10000000000 )
+		return 10;
+	return 11;
+}

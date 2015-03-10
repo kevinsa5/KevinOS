@@ -1,19 +1,25 @@
-
-// http://wiki.osdev.org/Memory_Map_%28x86%29
-// roughly 30 KiB of free memory from 0x0500 to 0x7BFF
-// enough for now, might create more blocks in the future.
-
 /*
-	0x0500 to 0x12AC (3500 bytes) is a usage table, where the nth bit in the
-	table is on or off to show if the nth byte in the heap is allocated or not
+	http://wiki.osdev.org/Memory_Map_%28x86%29
+	roughly 30 KiB of free memory from 0x0500 to 0x7BFF
+	the stack grows down from 0x7c00, so we'll leave that alone.
+	
+	upper memory: 0x00100000 -> 0x00EFFFFF  (14 MiB)
+	0x100000 : 0x28E390 allocation table (1631120 bytes, 1.55 MiB)
+	0x28E391 : 0xEFFFFF heap (13048942 bytes, 12.44 MiB)
+	
+	heaptable is a usage table, where the nth bit in the
+	table is on or off to show if the nth byte in the heapblock 
+	is allocated or not
 */
 
-#define TOTAL_HEAP_MEMORY (0x7BFF - 0x0500)
-#define TOTAL_ALLOCATABLE_MEMORY (0x7BFF - 0x12AD)
 
-char* heapTable1 = (char*) 0x0500;
-char* heapBlock1 = (char*) 0x12AD;
-long bytesAllocated;
+#define TOTAL_HEAP_MEMORY (0xEFFFFF - 0x100000)
+#define TOTAL_ALLOCATABLE_MEMORY (0xEFFFFF - 0x28E391)
+#define TOTAL_TABLE_MEMORY (0x28E391 - 0x100000)
+
+char* heapTable1 = (char*) 0x100000;
+char* heapBlock1 = (char*) 0x28E391;
+int bytesAllocated = 0;
 
 void* malloc(int size){
 	int i,j;
@@ -70,6 +76,20 @@ void free(void* pointer, int size){
 		j = 0;
 		i++;
 	}
+}
+
+void clearAllocationTable(){
+	int i;
+	for(i = 0; i < TOTAL_TABLE_MEMORY; i++){
+		heapTable1[i] = 0;
+	}
+}
+
+int getBytesAllocated(){
+	return bytesAllocated;
+}
+int getAvailableMemory(){
+	return TOTAL_ALLOCATABLE_MEMORY;
 }
 
 double heapUsage(){

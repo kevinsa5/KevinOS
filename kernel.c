@@ -42,6 +42,7 @@ void printStatus(unsigned char);
 void enableInterrupts();
 void disableInterrupts();
 void printPrompt();
+unsigned long int millis();
 
 extern char _binary_KFS_bin_start[];
 char* KFS;
@@ -52,9 +53,11 @@ char prompt;
 int promptColor;
 char modifier[6];
 volatile unsigned long int ticks;
-int commandLength;
+
 char counter;
-char prevCommand[20];
+
+struct StringListNode *head;
+struct StringListNode *temp;
 
 int terminalMode;
 
@@ -65,10 +68,15 @@ char fileBuffer[height*width];
 #include "util.c"
 #include "IDT.c"
 #include "shell_commands.c"
+#include "editor.c"
 
 void main(){
 	vidmem = (char*) 0xb8000;
-	prevCommand[0] = 0;
+
+	head = (struct StringListNode *) malloc(sizeof(struct StringListNode));
+	head->next = 0;
+	head->str = "";
+	temp = head;
 	KFS = _binary_KFS_bin_start;
 	ttx = 0;
 	tty = 0;
@@ -76,7 +84,7 @@ void main(){
 	setSeed(5);
 	modifier[5] = 0;
 	int i = 0;
-	commandLength = 0;
+
 	counter = '0';
 
 	memFill(modifier, 0, 5);
@@ -86,7 +94,7 @@ void main(){
 	modifier[CAPSLOCK] = 0;
 	terminalMode = TERMINAL;
 	prompt = 21;
-	promptColor = 0x0A;
+	promptColor = 0x02;
 	clearScreen(0x0F);
 	//ttprintln("I am a computer! I am running Kevin's OS!"); 
 	ttprint("KevinOS build ");
@@ -103,10 +111,12 @@ void main(){
 	writeByteToPort(0x70,0x8B);
 	writeByteToPort(0x71, prev | 0x40);	
 	enableInterrupts();
-	
+
+	clearAllocationTable();
+
 	//ttprintln("");
 	//ttprintln("Prompt is ready:");
-
+	ttprintln("Type `help` for a list of commands.");
 	printPrompt();
 	printStatus(0x00);
 }
@@ -125,114 +135,6 @@ void keyPressed(unsigned char code){
 	}
 }
 
-void editor_keyPressed(unsigned char code, char c){
-	char printable = 1;
-	if(code == 0x0E){ // backspace
-		if(ttx == 0 && tty == 0) return;
-		cursorBackwards();
-		int i = 0;
-		while(getChar(ttx + i, tty) != 0){
-			printChar(ttx+i,tty,getChar(ttx+i+1,tty),0x0F);
-			i++;
-		}
-		printable = 0;
-	} else if(code == 0x4B){ // left arrow
-		ttx--;
-		if(ttx == -1){
-			ttx = 0;
-			tty--;
-			if(tty == -1) tty = 0;
-		}
-		setCursor(ttx, tty);
-		printable = 0;
-	} else if(code == 0x4D){ // right arrow
-		ttx++;
-		if(ttx == width){
-			ttx = width-1;
-			tty++;
-			if(tty == height) tty = height-1;
-		}
-		setCursor(ttx, tty);
-		printable = 0;
-	} else if(code == 0x48){ // up arrow
-		tty--;
-		if(tty == -1) tty = 0;
-		setCursor(ttx, tty);
-		printable = 0;
-	} else if(code == 0x50){ // down arrow
-		tty++;
-		if(tty == height) tty = height-1;
-		setCursor(ttx, tty);
-		printable = 0;
-	} else if(code == 0xCB){ // left arrow release
-		printable = 0;
-	} else if(code == 0xCD){ // right arrow release
-		printable = 0;
-	} else if(code == 0xC8){ // up arrow release
-		printable = 0;
-	} else if(code == 0xCB){ // down arrow release
-		printable = 0;
-	} else if(code == 0x1D){ // control on
-		modifier[CTRL] = 1;
-		printable = 0;
-	} else if(code == 0x9D){ //control off
-		modifier[CTRL] = 0;
-		printable = 0;
-	} else if(code == 0x36 || code == 0x2A){ //shift on
-		modifier[SHIFT] = 1;
-		printable = 0;
-	} else if(code == 0xB6 || code == 0xAA){ //shift off
-		modifier[SHIFT] = 0;
-		printable = 0;
-	} else if(code == 0x38){ // alt on
-		modifier[ALT] = 1;
-		printable = 0;
-	} else if(code == 0xB8){ // alt off
-		modifier[ALT] = 0;
-		printable = 0;
-	} else if(code == 0x52){ // insert
-		modifier[INSERT]++;
-		modifier[INSERT] %= 2;
-		printable = 0;
-	} else if(code == 0x3A){ // capslock
-		modifier[CAPSLOCK]++;
-		modifier[CAPSLOCK] %= 2;
-		printable = 0;
-	}
-	printStatus(code);
-
-
-	if(modifier[CTRL] && c == 's'){
-		int x = 0;
-		int y = 0;
-		for(y = 0; y < height; y++){
-			for(x = 0; x < width; x++){
-				fileBuffer[y*width + x] = getChar(x,y);
-			}
-		}
-		printable = 0;
-		clearScreen(0x00);
-		terminalMode = TERMINAL;
-		ttx = 0; tty = 0;
-		setCursor(ttx,tty);
-		printPrompt();
-		printStatus(0x00);
-		return;
-	}
-
-	if(c == 0) return;
-	if(modifier[INSERT] && printable == 1){
-		int i = 0;
-		while(getChar(ttx + i, tty) != 0){
-			i++;
-		}
-		while(i > 0){
-			printChar(ttx + i,tty,getChar(ttx+i-1,tty),0x0F);
-			i--;
-		}
-	}
-	ttprintChar(c);
-}
 void interpreter_keyPressed(unsigned char code, char c){}
 
 void terminal_keyPressed(unsigned char code, char c){
@@ -254,7 +156,18 @@ void terminal_keyPressed(unsigned char code, char c){
 			cursorBackwards();
 			cursorBackwards();
         }
-		ttprint(prevCommand);
+		ttprint(temp->str);
+		if(temp->next != 0)
+			temp = temp->next;
+	} else if(code == 0x50){ // down arrow
+		while(getChar(ttx-1,tty) != prompt){
+			ttprintChar(' ');
+			cursorBackwards();
+			cursorBackwards();
+        }
+		ttprint(temp->str);
+		if(temp->prev != 0)
+			temp = temp->prev;
 	} else if(code == 0x1D){ // control on
 		modifier[CTRL] = 1;
 	} else if(code == 0x9D){ //control off
@@ -299,8 +212,16 @@ void terminal_keyPressed(unsigned char code, char c){
 		int j;
 		for(j = 0; j < (offset(ttx,tty)-i)/2; j++) command[j] = vidmem[i+2*j];
 		ttprintChar('\n');
-		commandLength = strLen(command);
-		memCopy(command,prevCommand,commandLength);
+		//commandLength = strLen(command);
+		//memCopy(command,prevCommand,commandLength);
+		struct StringListNode *new = (struct StringListNode *)malloc(sizeof(struct StringListNode));
+		new->str = (char*) malloc(strLen(command));
+		memCopy(command,new->str, strLen(command));
+		new->next = head;
+		new->prev = 0;
+		head->prev = new;
+		head = new;
+		temp = head;
 		sh_handler(command);
 		if(terminalMode == TERMINAL){
 			ttprintChar(c);
@@ -325,6 +246,9 @@ void rtcCall(){
 void pitCall(){
 	ticks++;
 	if(ticks % PITfreq == 0) printStatus(0);
+}
+unsigned long int millis(){
+	return ticks;
 }
 void printStatus(unsigned char code){
 	int i;
@@ -366,11 +290,11 @@ void printStatus(unsigned char code){
 	printChar(statusX, absolute_height, modifier[ALT]+'0', 0x0F);
 	statusX += 1;
 
-	print(statusX, absolute_height, " Last:");
-	statusX += 6;
-	intToString(commandLength,str);
-	print(statusX, absolute_height, str);
-	statusX += strLen(str)-1;
+	//print(statusX, absolute_height, " Last:");
+	//statusX += 6;
+	//intToString(commandLength,str);
+	//print(statusX, absolute_height, str);
+	//statusX += strLen(str)-1;
 	
 	print(statusX, absolute_height, " Mode:");
 	statusX += 6;
@@ -404,11 +328,12 @@ void ttprint(char *string){
 	}
 }
 void ttprintInt(int n){
-	int len = n/10 + 1;
+	int len = numDigits(n) + 1;
 	if(n < 0) len++; // minus sign
-	char str[len];
+	char *str = (char*) malloc(len);
 	intToString(n,str);
 	ttprint(str);
+	free(str,len);
 }
 void ttprintIntln(int n){
 	ttprintInt(n);
@@ -441,7 +366,7 @@ void ttprintCharColor(char c, int col){
 	setCursor(ttx,tty);
 }
 void ttprintChar(char c){
-	ttprintCharColor(c,0x0f);
+	ttprintCharColor(c,0x0F);
 }
 void cursorForwards(){
 	if(getChar(ttx,tty) == 0) return;
@@ -519,6 +444,7 @@ void clearScreen(int color){
 		}
 	}
 }
+
 void disableInterrupts(){
 	asm volatile("cli");
 }

@@ -26,12 +26,15 @@ void sh_buildData(char*);
 void sh_memalloc(char*);
 void sh_memfree(char*);
 void sh_poke(char*);
+void sh_history(char*);
+void sh_memusg(char*);
+void sh_millis(char*);
 
 #include "sh_exec.c"
 #include "buildData.c"
 
-char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","delay", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "null"};
-void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_null};
+char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","delay", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "history", "memusg","millis","null"};
+void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_history, sh_memusg,sh_millis,sh_null};
 
 void sh_handler(char* command){
 	int i=0;
@@ -51,7 +54,6 @@ void sh_handler(char* command){
 		ttprintln(program);
 	}
 }
-
 
 void sh_edit(char* params){
 	terminalMode = EDITOR;
@@ -430,6 +432,27 @@ void sh_poke(char* params){
 	memCopy(params+i+1,substr2,strLen(params)-i);
 	int value = strToInt(substr2);
 	*pointer = value;
+}
+
+void sh_history(char* params){
+	struct StringListNode *conductor = (struct StringListNode *)malloc(sizeof(struct StringListNode));
+	conductor = head;
+	while(conductor->next != 0){
+		ttprintln(conductor->str);
+		conductor = conductor->next;
+	}
+}
+void sh_memusg(char* params){
+	int bytes = getBytesAllocated();
+	int avail = getAvailableMemory();
+	ttprint("Allocated ");
+	ttprintInt(bytes);
+	ttprint(" of ");
+	ttprintInt(avail);
+	ttprint(" bytes");
+}
+void sh_millis(char* params){
+	ttprintIntln(millis());
 }
 void sh_null(char* params){
 	ttprintln("wtf");

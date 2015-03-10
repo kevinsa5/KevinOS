@@ -11,7 +11,7 @@
 	; Note that if you change the kernel address, you also must change it
 	; in compile.sh (-Ttext)
 	KERNEL_ADDRESS equ 0x8000
-	NUM_SECTORS equ 66
+	NUM_SECTORS equ 76
 
 ; GDT definitions
 	gdt_start:
@@ -59,23 +59,8 @@
 
 	mov [BOOT_DRIVE], dl
 
-; Detect Low Memory (below 1Mb, usually below 640Kb)
-
-;    xor ax, ax
-;    int 0x12
-;    jc .mem_error
-;    ; ax now contains the # of kB from zero of continuous memory
-;    mov bx, ax
-;    call printint
-;    mov bx, MSG_KB
-;    call println
-;    jmp .wait
-
-;.mem_error:
-;    jmp $
-
 ;; Wait for keystroke
-;.wait:
+
 	mov bx, MSG_2
 	call println
 	mov ah, 0
