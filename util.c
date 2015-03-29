@@ -1,27 +1,5 @@
-void memFill(char*, char, int);
-void memCopy(char*, char*, int);
-int strLen(char*);
-void intToString(int, char*);
-int strToInt(char*);
-char scancodeToAscii(unsigned char, char, char, char);
-void charToString(unsigned char, char*);
-int strEquals(char*, char*);
-int strBeginsWith(char*, char*);
-void reverseInPlace(char*);
-void setSeed(unsigned int);
-unsigned int rand(unsigned int);
-int pow(int, int);
-int numDigits(int);
-int isAlpha(char);
-int isNumeric(char);
-int isAlphaNumeric(char);
 
-struct StringListNode
-{
-    char* str;
-    struct StringListNode *next;
-    struct StringListNode *prev;
-};
+#include "util.h"
 
 void memFill(char* to, char filler, int len){
 	int i;
@@ -218,6 +196,7 @@ int pow(int base, int exp)
     return result;
 }
 int numDigits(int num){
+	if(num < 0) num *= -1;
 	if ( num < 10 )
 		return 1;
 	if ( num < 100 )

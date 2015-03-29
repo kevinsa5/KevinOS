@@ -1,15 +1,12 @@
-/*
-#include "stdio.h"
-#include "util.c"
-
-#define width 80
-#define height 18
-*/
+#include "util.h"
+#include "kernel.h"
+#include "malloc.h"
 
 int iregisters[10];
 char cregisters[10];
 int cmp1, cmp2;
 
+void exec_sleep(char*);
 void exec_seti(char*);
 void exec_setc(char*);
 void exec_printi(char*);
@@ -23,9 +20,10 @@ void exec_dec(char*);
 void exec_setcmp1(char*);
 void exec_setcmp2(char*);
 void exec_status(char*);
+struct StringListNode * exec_findLine(int);
 
-char *execCommandList[] =           {    "seti",    "setc",    "printi",    "printc",    "addi",    "multi",    "randi",    "inc",    "dec",    "setcmp1",  "setcmp2",     "status"   ,  ""};
-void (*execFunctionList[])(char*) = {exec_seti, exec_setc, exec_printi, exec_printc, exec_addi, exec_multi, exec_randi, exec_inc, exec_dec, exec_setcmp1, exec_setcmp2, exec_status, exec_null};
+char *execCommandList[] =           {    "sleep", "seti",    "setc",    "printi",    "printc",    "addi",    "multi",    "randi",    "inc",    "dec",    "setcmp1",  "setcmp2",     "status"   ,  ""};
+void (*execFunctionList[])(char*) = {exec_sleep, exec_seti, exec_setc, exec_printi, exec_printc, exec_addi, exec_multi, exec_randi, exec_inc, exec_dec, exec_setcmp1, exec_setcmp2, exec_status, exec_null};
 
 void sh_exec(char* unused_params){
 	terminalMode = INTERPRETER;
@@ -36,58 +34,52 @@ void sh_exec(char* unused_params){
 		iregisters[index] = 0;
 		cregisters[index] = 0;
 	}
-	
 	//iterate through the buffer
-	int lineNum;
-	for(lineNum = 0; lineNum < height; lineNum++){
-		// read line, removing null chars along the way:
-		int i = 0;
-		index = lineNum * width;
-		// lines must not have the first char blank
-		// also don't read comments
-		if(fileBuffer[index] == ' ' || fileBuffer[index] == 0 || fileBuffer[index] == '#')
+	struct StringListNode *execLine = fileBuffer->firstLine;
+	while(execLine){
+		if((execLine->str)[0] == 0 || (execLine->str)[0] == '#'){
+			execLine = execLine->next;
 			continue;
-		memFill(line,0,width);
-		while(fileBuffer[index] != ';' && i < 80){
-			if(fileBuffer[index] != 0){
-				line[i] = fileBuffer[index];
-				i++; 
-			}
-			index++;
 		}
-		if(strEquals(line,"")) continue;
-		// now `line` contains the command (function + args) to be interpreted
-		// isolate out the function part by splitting on the first space
+		int len = strLen(execLine->str);
 		int j = 0;
-		while(line[j] != ' ' && j < width) j++;
-		char function[j+1];
-		char params[width-j];
-		memCopy(line, function, j);
+		while(j < len && (execLine->str)[j] != ' ' && (execLine->str)[j] != ';') j++;
+		char *function = (char*) malloc(j+1);
+		char *params = (char*) malloc(len-j);
+		memCopy(execLine->str, function, j);
 		function[j] = 0;
-		memCopy((line + j+1), params, (width-j));
-		// macros:
+		int k = j;
+		while(k < len && (execLine->str)[k] != ';') k++;
+		memCopy(execLine->str + j + 1, params, k-j-1);
+
 		if(strEquals(function, "jeq")){
-			if(cmp1 == cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 == cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 			continue;
 		}
 		if(strEquals(function, "jne")){
-			if(cmp1 != cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 != cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 			continue;
 		}
 		if(strEquals(function, "jge")){
-			if(cmp1 >= cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 >= cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 			continue;
 		}
 		if(strEquals(function, "jle")){
-			if(cmp1 <= cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 <= cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 		   	continue;
 		}
 		if(strEquals(function, "jlt")){
-			if(cmp1 < cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 < cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 			continue;
 		}
 		if(strEquals(function, "jgt")){
-			if(cmp1 > cmp2) lineNum = strToInt(params) - 1;
+			if(cmp1 > cmp2) execLine = exec_findLine(strToInt(params) - 1);
+			else execLine = execLine->next;
 			continue;
 		}
 		j = 0;
@@ -100,9 +92,21 @@ void sh_exec(char* unused_params){
 			ttprintIntln(strLen(function));
 			break;
 		}
+		execLine = execLine->next;
 	}
 	terminalMode = TERMINAL;
 	return;
+}
+
+struct StringListNode* exec_findLine(int lineNum){
+	struct StringListNode *iter = fileBuffer->firstLine;
+	while(lineNum-- > 1 && iter) iter = iter->next;
+	return iter;
+}
+
+// `sleep milliseconds`
+void exec_sleep(char* params){
+	sleep(strToInt(params));
 }
 
 // `seti registerIndex value`
@@ -160,7 +164,7 @@ void exec_randi(char* params){
 			break;
 		}
 	}
-	iregisters[index] = rand(limit);
+	iregisters[index] = (int)rand(limit);
 }
 
 void exec_inc(char* params){

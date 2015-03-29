@@ -1,95 +1,54 @@
-#define width 80
-#define height 23
-#define absolute_height 24
-#define REG_SCREEN_CTRL 0x3D4
-#define REG_SCREEN_DATA 0x3D5
-#define SHIFT 0
-#define CTRL 1
-#define ALT 2
-#define INSERT 3
-#define CAPSLOCK 4
-
-//terminal modes:
-#define TERMINAL 0
-#define EDITOR 1
-#define INTERPRETER 2
-
-void delay(int);
-void print(int, int, char *);
-void printChar(int, int, char, int);
-char getChar(int, int);
-int getColor(int, int);
-void ttprintCharColor(char,int);
-void ttprintChar(char);
-void ttprint(char *);
-void ttprintInt(int);
-void ttprintln(char *);
-void ttprintIntln(int);
-int offset(int, int);
-void setCursor(int, int);
-void clearScreen(int);
-void scrollUp();
-void cursorBackwards();
-void cursorForwards();
-
-void keyPressed(unsigned char);
-void terminal_keyPressed(unsigned char, char);
-void editor_keyPressed(unsigned char, char);
-void interpreter_keyPressed(unsigned char, char);
-void pitCall();
-void rtcCall();
-void printStatus(unsigned char);
-void enableInterrupts();
-void disableInterrupts();
-void printPrompt();
-unsigned long int millis();
-
 extern char _binary_KFS_bin_start[];
-char* KFS;
 char* vidmem;
-int ttx;
-int tty;
 char prompt;
 int promptColor;
-char modifier[6];
-volatile unsigned long int ticks;
 
+volatile unsigned long int ticks;
 char counter;
 
-struct StringListNode *head;
-struct StringListNode *temp;
-
-int terminalMode;
-
-char fileBuffer[height*width];
-
-#include "malloc.c"
-#include "driver.c"
-#include "util.c"
+#include "kernel.h"
+#include "malloc.h"
+#include "driver.h"
+#include "util.h"
 #include "IDT.c"
-#include "shell_commands.c"
-#include "editor.c"
+#include "shell_commands.h"
+#include "editor.h"
+
+char modifier[6];
+
+int ttx;
+int tty;
+int terminalMode;
+char* KFS;
+struct File *fileBuffer;
+struct StringListNode *historyHead;
+struct StringListNode *historyTemp;
+
+char* message;
 
 void main(){
 	vidmem = (char*) 0xb8000;
-
-	head = (struct StringListNode *) malloc(sizeof(struct StringListNode));
-	head->next = 0;
-	head->str = "";
-	temp = head;
+	clearAllocationTable();
+	
+	historyHead = (struct StringListNode *) malloc(sizeof(struct StringListNode));
+	
+	historyHead->prev = 0;
+	historyHead->next = 0;
+	historyHead->str = (char*) malloc(2);
+	historyHead->str[0] = 0;
+	historyTemp = historyHead;
 	KFS = _binary_KFS_bin_start;
 	ttx = 0;
 	tty = 0;
 	ticks = 0;
 	setSeed(5);
 	modifier[5] = 0;
+	message = (char*) malloc(3);
+	memCopy("OK",message,3);
 	int i = 0;
 
 	counter = '0';
-
 	memFill(modifier, 0, 5);
-	memFill(fileBuffer, 0, height*width);
-
 	modifier[INSERT] = 1;
 	modifier[CAPSLOCK] = 0;
 	terminalMode = TERMINAL;
@@ -112,11 +71,10 @@ void main(){
 	writeByteToPort(0x71, prev | 0x40);	
 	enableInterrupts();
 
-	clearAllocationTable();
-
 	//ttprintln("");
 	//ttprintln("Prompt is ready:");
 	ttprintln("Type `help` for a list of commands.");
+		
 	printPrompt();
 	printStatus(0x00);
 }
@@ -124,6 +82,18 @@ void main(){
 //right: E0 4D E0 CD
 //up: E0 48 E0 C8
 //down: E0 50 E0 D0
+
+void printNode(struct StringListNode *node){
+	ttprint("node:");
+	ttprintInt((int)node);
+	ttprint(" prev:");
+	ttprintInt((int)node->prev);
+	ttprint(" next:");
+	ttprintInt((int)node->next);
+	ttprint(" str:");
+	ttprintln(node->str);
+}
+
 void keyPressed(unsigned char code){
 	char c = scancodeToAscii(code, modifier[SHIFT], modifier[CTRL], modifier[CAPSLOCK]);
 	if(terminalMode == TERMINAL){
@@ -156,18 +126,18 @@ void terminal_keyPressed(unsigned char code, char c){
 			cursorBackwards();
 			cursorBackwards();
         }
-		ttprint(temp->str);
-		if(temp->next != 0)
-			temp = temp->next;
+		ttprint(historyTemp->str);
+		if(historyTemp->next != 0)
+			historyTemp = historyTemp->next;
 	} else if(code == 0x50){ // down arrow
 		while(getChar(ttx-1,tty) != prompt){
 			ttprintChar(' ');
 			cursorBackwards();
 			cursorBackwards();
         }
-		ttprint(temp->str);
-		if(temp->prev != 0)
-			temp = temp->prev;
+		ttprint(historyTemp->str);
+		if(historyTemp->prev != 0)
+			historyTemp = historyTemp->prev;
 	} else if(code == 0x1D){ // control on
 		modifier[CTRL] = 1;
 	} else if(code == 0x9D){ //control off
@@ -212,31 +182,40 @@ void terminal_keyPressed(unsigned char code, char c){
 		int j;
 		for(j = 0; j < (offset(ttx,tty)-i)/2; j++) command[j] = vidmem[i+2*j];
 		ttprintChar('\n');
-		//commandLength = strLen(command);
-		//memCopy(command,prevCommand,commandLength);
+
 		struct StringListNode *new = (struct StringListNode *)malloc(sizeof(struct StringListNode));
+		
 		new->str = (char*) malloc(strLen(command));
 		memCopy(command,new->str, strLen(command));
-		new->next = head;
+		new->next = historyHead;
 		new->prev = 0;
-		head->prev = new;
-		head = new;
-		temp = head;
+
+		historyHead->prev = new;
+		historyHead = new;
+		historyTemp = historyHead;
+
 		sh_handler(command);
 		if(terminalMode == TERMINAL){
-			ttprintChar(c);
+			//ttprintChar(c);
 			printPrompt();
 		}
 	}
 }
+
+void setMessage(char *new){
+	free(message,strLen(message));
+	int len = strLen(new);
+	message = (char*) malloc(len);
+	memCopy(new,message,len);
+}
 void printPrompt(){
 	ttprintCharColor(prompt,promptColor);
 }
-void delay(int mS){
+void sleep(int mS){
 	enableInterrupts();
 	unsigned long int start = ticks;
 	while(ticks - start < mS){;}
-	ttprint("done");
+	//ttprint("done");
 }
 void rtcCall(){
 	counter++;
@@ -258,6 +237,9 @@ void printStatus(unsigned char code){
 	}
 	int statusX = 0;
 	char str[10];
+	
+	print(statusX, absolute_height, message);
+	statusX += strLen(message);
 	
 	print(statusX, absolute_height, "Code:");
 	statusX += 5;
@@ -320,6 +302,7 @@ void printStatus(unsigned char code){
 	statusX += 6;
 	intToString(ticks/PITfreq,str);
 	print(statusX, absolute_height,str);
+	statusX += strLen(str)-1;
 }
 void ttprint(char *string){
 	int i;

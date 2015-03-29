@@ -1,40 +1,26 @@
-void sh_readKFS(char*);
-void sh_textDump(char*);
-void sh_memDump(char*);
-void sh_help(char*);
-void sh_null(char*);
-void sh_cat(char*);
-void sh_head(char*);
-void sh_ls(char*);
-void sh_edit(char*);
-void sh_read(char*);
-void sh_glissando(char*);
-void sh_mario(char*);
-void sh_delay(char*);
-void sh_beep(char*);
-void sh_htoi(char*);
-void sh_itoh(char*);
-void sh_int(char*);
-void sh_rand(char*);
-void sh_colorTable(char*);
-void sh_charTable(char*);
-void sh_hexTable(char*);
-void sh_dataTypes(char*);
-void sh_sti(char*);
-void sh_cli(char*);
-void sh_buildData(char*);
-void sh_memalloc(char*);
-void sh_memfree(char*);
-void sh_poke(char*);
-void sh_history(char*);
-void sh_memusg(char*);
-void sh_millis(char*);
 
+struct File *readFile(char*);
+
+#include "shell_commands.h"
+#include "kernel.h"
 #include "sh_exec.c"
+#include "sh_lisp.c"
 #include "buildData.c"
+#include "util.h"
+#include "driver.h"
+#include "editor.h"
 
-char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","delay", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "history", "memusg","millis","null"};
-void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_delay, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_history, sh_memusg,sh_millis,sh_null};
+char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","sleep", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "history", "memusg","millis","foo","null"};
+void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_sleep, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_history, sh_memusg,sh_millis, sh_foo, sh_null};
+
+void sh_foo(char* command){
+	struct expr * testexpr = (struct expr *) malloc(sizeof(struct expr));
+	testexpr->type = 20;
+	char* ptr = (char*) malloc(5);
+	memCopy("grem",ptr,5);
+	testexpr->data = ptr;
+	ttprintln(toString(testexpr));
+}
 
 void sh_handler(char* command){
 	int i=0;
@@ -57,26 +43,19 @@ void sh_handler(char* command){
 
 void sh_edit(char* params){
 	terminalMode = EDITOR;
-	clearScreen(0x0F);
-	int x = 0;
-	int y = 0;
-	for(y = 0; y < height; y++){
-		for(x = 0; x < width; x++){
-			printChar(x,y,fileBuffer[y*width + x],0x0F);
-		}
-	}
-	setCursor(0,0);
+	editor_initialize();
+	editor_updateScreen();
 }
 
 void sh_ls(char* params){
 	int i;
-	char firstTime = 1;
+	//char firstTime = 1;
     char* pointer = KFS;
     char* KFS_sig = "KFS Begin";
     for(i=0; i<strLen(KFS_sig)-1; i++){
             if(pointer[i] != KFS_sig[i]){
                     ttprint("Error! File system does not start with:");
-                    ttprint(KFS_sig);
+                    ttprintln(KFS_sig);
                     return;
             }
     }
@@ -84,16 +63,12 @@ void sh_ls(char* params){
     // 25 is filesystem header, 94 is max # files
     for(i=0; i < 94; i++){
 		if(pointer[0] == 0) continue;
-		if(!firstTime){
-			ttprint("\n");
-		} else {
-			firstTime = 0;
-		}
 	    int c;
 		for(c = 0; c < 10 && pointer[c] != 0; c++){
 			ttprintChar(pointer[c]);
 		}
         pointer += 16;
+        ttprint("\n");
     }
 }
 void sh_head(char* params){
@@ -101,61 +76,95 @@ void sh_head(char* params){
 		ttprintln("Must pass a filename.");
 		return;
 	}
-	int i,numLines = 0;
-	char** pointer;
-	int len = getFilePointer(params, pointer);
-	for(i = 0; i < len && numLines < 10; i++){
-		ttprintChar((*pointer)[i]);
-		if((*pointer)[i] == '\n') numLines++;
+	int lines = 10;
+	struct File *f = readFile(params);
+	struct StringListNode* line = f->firstLine;
+	while(line && lines > 0){
+		ttprint(line->str);
+		line = line->next;
+		lines--;
 	}
 }
 
+
 void sh_read(char* params){
-	int i;
-	char** pointer;
-	int len = getFilePointer(params,pointer);
-	
-	if(len > width*height){
-		ttprintln("err: file too big");
-		terminalMode = TERMINAL;
-		return;
-	}
-
-	// for some reason, a loop is necessary or else it crashes.
-	// WTF.
-	for(i = 0; i < 0;i++){}
-
-	memFill(fileBuffer, 0, width*height);
-	int bufferIndex = 0;
-	int fileIndex = 0;
-	while(fileIndex < len){
-		if((*pointer)[fileIndex] != '\n'){
-			fileBuffer[bufferIndex] = (*pointer)[fileIndex];
-			bufferIndex++;
-		} else {
-			fileBuffer[bufferIndex] = '\n';
-			while(bufferIndex % width != 0) bufferIndex++;
-		}
-		fileIndex++;
-	}
+	fileBuffer = readFile(params);
 }
 
 void sh_cat(char* params){
-	int i;
-	char** pointer;
-	if(strEquals(params,"buf")){
-		for(i = 0; i < width*height; i++)
-			ttprintChar(fileBuffer[i]);
+	struct StringListNode *temp;
+	if(strEquals(params,"buffer")){
+		temp = fileBuffer->firstLine;
 	} else {
-		int len = getFilePointer(params,pointer);
-		for(i = 0; i < len; i++){
-			ttprintChar((*pointer)[i]);
-		}
+		struct File *f = readFile(params);
+		temp = f->firstLine;
+	}
+	while(temp){
+		ttprint(temp->str);
+		temp = temp->next;
 	}
 }
+
+void clearBuffer(){
+	struct StringListNode *temp = fileBuffer->firstLine;
+	struct StringListNode *next;
+	while(temp){
+		free(temp->str, strLen(temp->str));
+		next = temp->next;
+		free(temp, sizeof(struct StringListNode));
+		temp = next;
+	}
+	free(fileBuffer->filename, strLen(fileBuffer->filename));
+	fileBuffer->filename = 0;
+	fileBuffer->filesize = 0;	
+}
+
+/*
+	parse a file into a linked list of lines separated by \n
+*/
+
+struct File *readFile(char* params){
+	char** pointer;
+	int len = getFilePointer(params,pointer);
+	struct File *file;
+	file = (struct File*)malloc(sizeof(struct File));
+	file->filename = (char*)malloc(strLen(params));
+	memCopy(params,file->filename,strLen(params));
+	file->filesize = len;
+	int i;
+	struct StringListNode *line = (struct StringListNode*) malloc(sizeof(struct StringListNode));
+	file->firstLine = line;
+	line->prev = 0;
+	line->next = 0;
+	int lineStart = 0;
+	// split the file into separate lines
+	for(i = 0; i < len; i++){
+		if((*pointer)[i] == '\n' || i == len-1){
+			line->str = (char*) malloc(i-lineStart+2);
+			memCopy((*pointer+lineStart), line->str, i-lineStart+1);
+			(line->str)[i-lineStart+1] = 0;
+			//set up the next line
+			struct StringListNode *tline;
+			tline = (struct StringListNode*) malloc(sizeof(struct StringListNode));
+			tline->prev = line;
+			line->next = tline;
+			line = tline;
+			lineStart = i+1;
+		}
+		if(i == len-1){
+			//nix the next line, since there isn't one
+			line = line->prev;
+			free(line->next, sizeof(struct StringListNode));
+			line->next = 0;
+		}
+	}
+	return file;
+}
+
 /* 
 * stores pointer to file in param2, returns filesize
 */
+
 int getFilePointer(char* params, char** pointerParam){
 
 	int i;
@@ -222,23 +231,22 @@ void sh_glissando(char* params){
 }
 
 void sh_mario(char* params){
-	int i;
 	sh_beep("659 100");
-	delay(100);
+	sleep(100);
 	sh_beep("659 100");
-	delay(150);
+	sleep(150);
 	sh_beep("659 100");
-	delay(200);
+	sleep(200);
 	sh_beep("523 100");
-	delay(75);
+	sleep(75);
 	sh_beep("659 100");
-	delay(200);
+	sleep(200);
 	sh_beep("784 100");
-	delay(500);
+	sleep(500);
 	sh_beep("392 100");
 }
-void sh_delay(char* params){
-	delay(strToInt(params));
+void sh_sleep(char* params){
+	sleep(strToInt(params));
 }
 void sh_beep(char* params){
 	//"beep freq duration"
@@ -256,7 +264,7 @@ void sh_beep(char* params){
 		dur = strToInt(duration);
 	}
 	play_sound(freq);
-	delay(dur);
+	sleep(dur);
 	play_sound(0);
 }
 void sh_htoi(char* params){
@@ -284,7 +292,7 @@ void sh_htoi(char* params){
 		}
 		else sum += pow(16,i) * (params[i+2]-'0');
 	}
-	ttprintInt(sum);
+	ttprintIntln(sum);
 }
 void sh_itoh(char* params){
 	char s[3];
@@ -312,6 +320,7 @@ void sh_textDump(char* params){
 	for(i=0;i<length;i++){
 		ttprintChar(pointer[i]);
 	}
+	ttprint("\n");
 }
 
 void sh_memDump(char* params){
@@ -334,6 +343,7 @@ void sh_memDump(char* params){
 		ttprint(hex);
 		ttprint(" ");
 	}
+	ttprint("\n");
 }
 
 void sh_rand(char* params){
@@ -345,8 +355,8 @@ void sh_rand(char* params){
 			return;
 		}
 	}
-	if(strLen(params) == 1) ttprintInt(rand(10));
-	else ttprintInt(rand(strToInt(params)));
+	if(strLen(params) == 1) ttprintIntln(rand(10));
+	else ttprintIntln(rand(strToInt(params)));
 	return;
 }
 void sh_colorTable(char* params){
@@ -360,12 +370,14 @@ void sh_colorTable(char* params){
 	for(a = 0; a < 16; a++){
 		ttprintCharColor('+',15*16+a);
 	}
+	ttprint("\n");
 }
 void sh_charTable(char* params){
 	char i;
 	for(i = -128; i < 127; i++){
 		ttprintChar(i);
 	}
+	ttprint("\n");
 }
 void sh_hexTable(char* params){
 	char str[5];
@@ -402,10 +414,11 @@ void sh_help(char* params){
 		ttprint(shCommandList[i]);
 		i++;
 	}
+	ttprint("\n");
 }
 void sh_memalloc(char* params){
 	char* ptr = (char*) malloc(strToInt(params));
-	ttprintInt((int)ptr);
+	ttprintIntln((int)ptr);
 }
 void sh_memfree(char* params){
 	int i;
@@ -435,9 +448,8 @@ void sh_poke(char* params){
 }
 
 void sh_history(char* params){
-	struct StringListNode *conductor = (struct StringListNode *)malloc(sizeof(struct StringListNode));
-	conductor = head;
-	while(conductor->next != 0){
+	struct StringListNode *conductor = historyHead;
+	while(conductor->next){
 		ttprintln(conductor->str);
 		conductor = conductor->next;
 	}
@@ -449,7 +461,7 @@ void sh_memusg(char* params){
 	ttprintInt(bytes);
 	ttprint(" of ");
 	ttprintInt(avail);
-	ttprint(" bytes");
+	ttprintln(" bytes");
 }
 void sh_millis(char* params){
 	ttprintIntln(millis());

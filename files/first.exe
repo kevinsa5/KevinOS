@@ -1,11 +1,11 @@
 seti 0 0;
 seti 1 10;
 setcmp2 1;
-# line 3
 inc 0;
 printi 0;
 setcmp1 0;
-jlt 3;
+sleep 250;
+jlt 4;
 setc 0 !;
 printc 0;
 status;

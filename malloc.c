@@ -12,6 +12,7 @@
 	is allocated or not
 */
 
+#include "malloc.h"
 
 #define TOTAL_HEAP_MEMORY (0xEFFFFF - 0x100000)
 #define TOTAL_ALLOCATABLE_MEMORY (0xEFFFFF - 0x28E391)
