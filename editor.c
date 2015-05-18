@@ -125,7 +125,7 @@ void editor_backspace(){
 		int len = strLen(activeLine->str);
 		char *new = (char*)malloc(len-1);
 		memCopy(activeLine->str,new,ttx);
-		memCopy(activeLine->str + ttx+1, new+ttx,(len-ttx));
+		memCopy(activeLine->str + ttx+1, new+ttx,(len-ttx-1));
 		free(activeLine->str,len);
 		activeLine->str = new;
 
