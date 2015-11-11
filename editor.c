@@ -4,6 +4,7 @@ void editor_down();
 #include "editor.h"
 #include "kernel.h"
 #include "util.h"
+#include "malloc.h"
 
 // first line displayed in the editor window
 struct StringListNode *highestLine;

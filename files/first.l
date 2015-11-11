@@ -1,0 +1,1 @@
+(foo (bar foo1 foo2 "asdf") baz)

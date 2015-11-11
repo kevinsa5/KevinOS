@@ -1,11 +1,18 @@
+# register 0 is the first number
 seti 0 0;
-seti 1 10;
-setcmp2 1;
-inc 0;
+# register 1 is the second number
+seti 1 1;
+# loop until 10
+seti 9 20;
+setcmp2 9;
+# register 5 is the iteration count
+seti 5 0;
+seti 9 0;
+addi 0 1 2;
+addi 1 9 0;
+addi 2 9 1;
 printi 0;
-setcmp1 0;
-sleep 250;
-jlt 4;
-setc 0 !;
-printc 0;
+inc 5;
+setcmp1 5;
+jlt 11;
 status;

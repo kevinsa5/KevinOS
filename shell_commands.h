@@ -1,6 +1,8 @@
 #ifndef SHELL_COMMANDS_H
 #define SHELL_COMMANDS_H
 
+void sh_handler(char*);
+
 void sh_readKFS(char*);
 void sh_textDump(char*);
 void sh_memDump(char*);
@@ -32,9 +34,12 @@ void sh_poke(char*);
 void sh_history(char*);
 void sh_memusg(char*);
 void sh_millis(char*);
+void sh_echo(char*);
+void sh_shell(char*);
 void sh_foo(char*);
+void sh_msg(char*);
 
 void clearBuffer();
-int getFilesPointer(char*);
+int getFilePointer(char*, char**);
 
 #endif

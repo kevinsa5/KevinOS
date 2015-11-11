@@ -49,7 +49,6 @@ void cursorForwards();
 void keyPressed(unsigned char);
 void terminal_keyPressed(unsigned char, char);
 void editor_keyPressed(unsigned char, char);
-void interpreter_keyPressed(unsigned char, char);
 void pitCall();
 void rtcCall();
 void printStatus(unsigned char);

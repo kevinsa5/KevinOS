@@ -13,6 +13,8 @@ char counter;
 #include "IDT.c"
 #include "shell_commands.h"
 #include "editor.h"
+#include "sh_exec.h"
+#include "buildData.h"
 
 char modifier[6];
 
@@ -71,10 +73,8 @@ void main(){
 	writeByteToPort(0x71, prev | 0x40);	
 	enableInterrupts();
 
-	//ttprintln("");
-	//ttprintln("Prompt is ready:");
-	ttprintln("Type `help` for a list of commands.");
-		
+	sh_shell("startup.sh");
+	
 	printPrompt();
 	printStatus(0x00);
 }
@@ -103,9 +103,8 @@ void keyPressed(unsigned char code){
 	} else if(terminalMode == INTERPRETER){
 		interpreter_keyPressed(code, c);
 	}
+	if(code == 0x01) setMessage("ESC");
 }
-
-void interpreter_keyPressed(unsigned char code, char c){}
 
 void terminal_keyPressed(unsigned char code, char c){
 	if(code == 0x0E){ // backspace

@@ -1,5 +1,44 @@
 
 #include "util.h"
+#include "malloc.h"
+/*
+struct StringListNode* makeStringBuilder(char* s){
+	struct StringListNode* node = (struct StringListNode*) malloc(sizeof(struct StringListNode));
+	node->prev = 0;
+	node->next = 0;
+	char* str = (char*)malloc(strLen(s));
+	memCopy(s,str,strLen(s));
+	node->str = str;
+	return s;
+}
+*/
+
+int flattenStringList(struct StringListNode* head, char** str){
+	int length = 0, index = 0;
+	struct StringListNode *temp = head;
+	while(temp){
+		length += strLen(temp->str)-1;
+		temp = temp->next;	
+	}
+	*str = (char*)malloc(length+1);
+	temp = head;
+	while(temp){
+		memCopy(temp->str, (*str)+index, strLen(temp->str)-1);
+		index += strLen(temp->str)-1;
+		temp = temp->next;
+	}
+	(*str)[index] = 0;
+	return length;
+}
+
+void strReplace(char* str, char from, char to){
+	while(*str){
+		if(*str == from)
+			*str = to;
+		str++;
+	}
+}
+
 
 void memFill(char* to, char filler, int len){
 	int i;

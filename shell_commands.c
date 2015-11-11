@@ -4,22 +4,34 @@ struct File *readFile(char*);
 #include "shell_commands.h"
 #include "kernel.h"
 #include "sh_exec.c"
-#include "sh_lisp.c"
-#include "buildData.c"
 #include "util.h"
+#include "sh_lisp.c"
+#include "buildData.h"
 #include "driver.h"
 #include "editor.h"
 
-char *shCommandList[] = {"read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","sleep", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "history", "memusg","millis","foo","null"};
-void (*shFunctionList[])(char*) = {sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_sleep, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_history, sh_memusg,sh_millis, sh_foo, sh_null};
+char *shCommandList[] = {"shell", "read", "exec", "edit", "ls", "head","cat", "textdump", "memdump", "help", "glissando", "mario","sleep", "beep", "htoi", "itoh", "int", "rand", "colortable", "chartable", "hextable", "datatypes", "sti", "cli", "builddata", "memalloc", "memfree", "poke", "history", "memusg","millis","echo","foo","msg","null"};
+void (*shFunctionList[])(char*) = {sh_shell, sh_read, sh_exec, sh_edit, sh_ls, sh_head, sh_cat, sh_textDump, sh_memDump, sh_help, sh_glissando, sh_mario, sh_sleep, sh_beep, sh_htoi, sh_itoh, sh_int, sh_rand, sh_colorTable, sh_charTable, sh_hexTable, sh_dataTypes, sh_sti, sh_cli, sh_buildData, sh_memalloc, sh_memfree, sh_poke, sh_history, sh_memusg,sh_millis, sh_echo, sh_foo, sh_msg, sh_null};
 
 void sh_foo(char* command){
-	struct expr * testexpr = (struct expr *) malloc(sizeof(struct expr));
-	testexpr->type = 20;
-	char* ptr = (char*) malloc(5);
-	memCopy("grem",ptr,5);
-	testexpr->data = ptr;
+	struct expr * testexpr;
+	testexpr = makeIntExpr((int) millis());
 	ttprintln(toString(testexpr));
+	testexpr = makeFloatExpr(3.14159265358979);
+	ttprintln(toString(testexpr));
+	testexpr = makeStringExpr("Hello, world!");
+	ttprintln(toString(testexpr));
+	testexpr = makeBoolExpr(1);
+	ttprintln(toString(testexpr));
+	testexpr = makeBoolExpr(0);
+	ttprintln(toString(testexpr));
+	/*
+	struct StringListNode* tokens = tokenize(fileBuffer->firstLine);
+	ttprintln("printing tokens:");
+	while(tokens){
+		ttprintln(tokens->str);
+		tokens = tokens->next;
+	}*/
 }
 
 void sh_handler(char* command){
@@ -38,6 +50,39 @@ void sh_handler(char* command){
 	else {
 		ttprint("Command not found: ");
 		ttprintln(program);
+	}
+}
+
+void sh_echo(char* params){
+	ttprintln(params);
+}
+
+void sh_msg(char* params){
+	setMessage(params);
+}
+
+
+// run sh_handler on each line of a file (or the buffer)
+void sh_shell(char* params){
+	struct StringListNode *temp;
+	if(strEquals(params,"buffer")){
+		temp = fileBuffer->firstLine;
+	} else {
+		struct File *f = readFile(params);
+		temp = f->firstLine;
+	}
+	while(temp){
+		int len = strLen(temp->str)-1;
+		if((temp->str)[len-1] == '\n'){ // lines ends with \n
+			char* line = (char*) malloc(len);
+			memCopy(temp->str, line, len);
+			line[len-1] = 0;
+			sh_handler(line);
+			free(line, len);
+		} else { // line doesn't end with \n (last line in file)
+			sh_handler(temp->str);
+		}
+		temp = temp->next;
 	}
 }
 
@@ -189,7 +234,7 @@ int getFilePointer(char* params, char** pointerParam){
 	if(i == 94){
 		ttprint("File not found:");
 		ttprint(params);
-		return;
+		return -2;
 	}
 	i = 0;
 	*pointer += 10;

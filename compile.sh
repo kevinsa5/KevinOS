@@ -37,8 +37,11 @@ printf "ok\n"
 printf "Compiling editor.c... "
 gcc -ffreestanding -m32 -c editor.c -o editor.o
 printf "ok\n"
+printf "Compiling buildData.c... "
+gcc -ffreestanding -m32 -c buildData.c -o buildData.o
+printf "ok\n"
 printf "Linking kernel files... "
-ld -melf_i386 -o kernel.bin -Ttext 0x8000 kernel_entry.o int.o malloc.o shell_commands.o util.o driver.o editor.o kernel.o KFS.o --oformat binary --entry main
+ld -melf_i386 -o kernel.bin -Ttext 0x8000 kernel_entry.o int.o malloc.o shell_commands.o util.o driver.o editor.o buildData.o kernel.o KFS.o --oformat binary --entry main
 printf "ok\n"
 
 sectorcount=100

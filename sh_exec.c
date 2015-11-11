@@ -1,6 +1,7 @@
 #include "util.h"
 #include "kernel.h"
 #include "malloc.h"
+#include "sh_exec.h"
 
 int iregisters[10];
 char cregisters[10];
@@ -21,6 +22,7 @@ void exec_setcmp1(char*);
 void exec_setcmp2(char*);
 void exec_status(char*);
 struct StringListNode * exec_findLine(int);
+char userQuit = 0;
 
 char *execCommandList[] =           {    "sleep", "seti",    "setc",    "printi",    "printc",    "addi",    "multi",    "randi",    "inc",    "dec",    "setcmp1",  "setcmp2",     "status"   ,  ""};
 void (*execFunctionList[])(char*) = {exec_sleep, exec_seti, exec_setc, exec_printi, exec_printc, exec_addi, exec_multi, exec_randi, exec_inc, exec_dec, exec_setcmp1, exec_setcmp2, exec_status, exec_null};
@@ -37,6 +39,10 @@ void sh_exec(char* unused_params){
 	//iterate through the buffer
 	struct StringListNode *execLine = fileBuffer->firstLine;
 	while(execLine){
+		if(userQuit){
+			ttprintln("ESC interrupt");
+			break;
+		}
 		if((execLine->str)[0] == 0 || (execLine->str)[0] == '#'){
 			execLine = execLine->next;
 			continue;
@@ -96,6 +102,13 @@ void sh_exec(char* unused_params){
 	}
 	terminalMode = TERMINAL;
 	return;
+}
+
+void interpreter_keyPressed(unsigned char code, char c){
+	//this doesn't work, key presses aren't registered while a function is running
+	if(code == 0x01){ // escape
+		userQuit = 1;
+	}
 }
 
 struct StringListNode* exec_findLine(int lineNum){
